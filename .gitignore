@@ -1,0 +1,51 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# VSCode settings
+.vscode/
+
+# Webpack cache
+.cache/
+webpack.cache/
+
+# Coverage reports
+coverage/
+
+# Optional IDEs
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Mac system files
+*.swp
+*.tmp
+
+# Map tile cache (if you store anything locally)
+tile-cache/
+
+# Other temp files
+*.bak
+*.old
+*.orig

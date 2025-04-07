@@ -1,0 +1,94 @@
+{
+    "regions": [
+        {
+            "iconic": {
+                "name": "Lion",
+                "message": "The apex predator of the savanna, known for its powerful roar and social pride structure.",
+                "iconSize": [70, 70],
+                "image": "images/lion.png",
+                "coordinates": [36.8219, -1.2921]
+            },
+            "detailed": [
+                {
+                    "name": "Cheetah",
+                    "message": "The fastest land animal, capable of reaching speeds up to 75 mph in short bursts.",
+                    "iconSize": [40, 40],
+                    "image": "images/cheetah.png",
+                    "coordinates": [31, -2]
+                },
+                {
+                    "name": "Gorilla",
+                    "message": "A highly intelligent primate, known for its strong family bonds and use of tools.",
+                    "iconSize": [40, 40],
+                    "image": "images/gorilla.png",
+                    "coordinates": [30, 0]
+                }
+            ]
+        },
+        {
+            "iconic": {
+                "name": "Panda",
+                "message": "A bamboo-loving bear found in China's mountainous regions, a global symbol of conservation.",
+                "iconSize": [60, 60],
+                "image": "images/panda-bear.png",
+                "coordinates": [104, 35]
+            },
+            "detailed": [
+                {
+                    "name": "Red Panda",
+                    "message": "A small, tree-dwelling mammal that spends most of its life among the branches of Himalayan forests.",
+                    "iconSize": [40, 40],
+                    "image": "images/red-panda.png",
+                    "coordinates": [105, 34]
+                }
+            ]
+        },
+        {
+            "iconic": {
+                "name": "Kangaroo",
+                "message": "A marsupial known for its powerful hind legs, unique hopping motion, and ability to carry young in a pouch.",
+                "iconSize": [50, 50],
+                "image": "images/kangaroo.png",
+                "coordinates": [133, -25]
+            },
+            "detailed": [
+                {
+                    "name": "Koala",
+                    "message": "A eucalyptus-loving marsupial that sleeps up to 18 hours a day in Australia's forests.",
+                    "iconSize": [40, 40],
+                    "image": "images/koala.png",
+                    "coordinates": [134, -26]
+                }
+            ]
+        },
+        {
+            "iconic": {
+                "name": "Eagle",
+                "message": "A majestic bird of prey with powerful vision, capable of spotting prey from miles away.",
+                "iconSize": [50, 50],
+                "image": "images/eagle.png",
+                "coordinates": [-100, 45]
+            },
+            "detailed": [
+                {
+                    "name": "Grizzly Bear",
+                    "message": "A North American giant that can weigh over 600 pounds and hibernates during the winter.",
+                    "iconSize": [40, 40],
+                    "image": "images/bear.png",
+                    "coordinates": [-110, 48]
+                }
+            ]
+        },
+        {
+            "iconic": {
+                "name": "Wolf",
+                "message": "A highly intelligent pack hunter, known for its strong social bonds and ability to communicate through howls.",
+                "iconSize": [50, 50],
+                "image": "images/wolf.png",
+                "coordinates": [10, 50]
+            },
+            "detailed": [
+            ]
+        }
+    ]
+}

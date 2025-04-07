@@ -1,0 +1,134 @@
+/* ========================== */
+/* QUIZ PAGE STYLES           */
+/* ========================== */
+
+/* Page Header */
+.page-header {
+    text-align: center;
+    padding: 20px;
+    color: white;
+    border-bottom: 4px solid #ffcc00;
+  }
+  
+  .page-header h1 {
+    font-size: 28px;
+    margin: 0;
+  }
+  
+  .page-header p {
+    font-size: 16px;
+    margin-top: 5px;
+    opacity: 1;
+  }
+  
+  /* Quiz Container */
+  #quiz-container {
+    max-width: 800px;
+    margin: 40px auto; /* Spacing above quiz content */
+    padding: 20px;
+    text-align: center;
+  }
+  
+  /* ========================== */
+  /* QUIZ QUESTIONS & OPTIONS   */
+  /* ========================== */
+  
+  /* Question Box */
+  .quiz-question {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+  }
+  
+  /* Options Container */
+  .options-container {
+    display: grid;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  
+  /* Individual Quiz Option */
+  .quiz-option {
+    padding: 10px 15px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    background-color: white;
+    cursor: pointer;
+    transition: background 0.3s ease, border-color 0.3s ease;
+    text-align: left;
+  }
+  
+  .quiz-option:hover:not(:disabled) {
+    background-color: #f0f0f0;
+    border-color: #999;
+  }
+  
+  .quiz-option:disabled {
+    cursor: not-allowed;
+  }
+  
+  /* Answer Feedback */
+  .quiz-option.correct {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+  }
+  
+  .quiz-option.incorrect {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+  }
+  
+  /* ========================== */
+  /* SCORE CONTAINER            */
+  /* ========================== */
+  
+  .score-container {
+    text-align: center;
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #e9ecef;
+  }
+  
+  /* Restart Quiz Button */
+  .score-container button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+  }
+  
+  .score-container button:hover {
+    background-color: #0056b3;
+  }
+  
+  /* ========================== */
+  /* BUTTON STYLING             */
+  /* ========================== */
+  
+  /* Start Quiz Button */
+  .start-btn {
+    display: inline-block;
+    margin-top: 20px; /* Spacing below header */
+    padding: 12px 24px;
+    background-color: #007bff;
+    color: white;
+    font-size: 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+  }
+  
+  .start-btn:hover {
+    background-color: #0056b3;
+  }
+  

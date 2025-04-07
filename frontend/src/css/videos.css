@@ -1,0 +1,67 @@
+/* ========================== */
+/* VIDEO PAGE STYLES          */
+/* ========================== */
+
+/* Main Content */
+main {
+    width: 80%;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Video Category Section */
+.video-category {
+    background: #ecf0f1;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.video-category h3 {
+    color: #2c3e50;
+}
+
+.video-category iframe {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    height: 315px;
+    margin: 10px auto;
+}
+
+.video-category p {
+    text-align: center;
+    font-size: 16px;
+}
+
+/* Video Category Links */
+.video-category a {
+    color: #2980b9;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.video-category a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    main {
+        width: 95%;
+    }
+    
+    nav ul li {
+        display: block;
+        margin: 10px 0;
+    }
+    
+    .video-category iframe {
+        width: 100%;
+        height: auto;
+    }
+}

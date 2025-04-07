@@ -1,0 +1,41 @@
+/* ========================== */
+/* NAVIGATION BAR STYLES      */
+/* ========================== */
+
+/* Navigation Bar */
+:root {
+  --nav-bg-color: #2d3e50;
+  --nav-link-color: white;
+  --nav-link-hover-color: #ffcc00;
+  --nav-padding: 10px;
+  --nav-font-size: 18px;
+  --nav-transition-duration: 0.2s;
+}
+
+nav {
+  background-color: var(--nav-bg-color);
+  padding: var(--nav-padding);
+  text-align: center;
+}
+
+/* Navigation menu styling */
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+/* Navigation link styling */
+nav ul li a {
+  color: var(--nav-link-color);
+  text-decoration: none;
+  font-size: var(--nav-font-size);
+  transition: color var(--nav-transition-duration);
+}
+
+nav ul li a:hover {
+  color: var(--nav-link-hover-color);
+}

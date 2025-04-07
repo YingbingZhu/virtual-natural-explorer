@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Wildlife Education</title>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav>
+        <ul>
+            <li><a href="index.html">🌍 Home</a></li>
+            <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
+            <li><a href="ecosystem.html">🌱 Ecosystems</a></li>
+            <li><a href="quiz.html">🐻 Quizzes</a></li>
+            <li><a href="videos.html">🎥 Videos & Stories</a></li>
+        </ul>
+    </nav>
+
+    <header class="page-header">
+        <h1>🌍 World Map</h1>
+        <p>Click and Chat with the animals on the map!</p>
+    </header>
+
+    <!-- Sections -->
+    <main>
+        <section id="map-section">
+            <div id="map"></div>
+        </section>
+    </main>
+
+    <!-- Chat Popup -->
+    <div id="chat-popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h2 id="chat-title">Wildlife Chatbot</h2>
+                <button id="close-popup" onclick="closeChatPopup()">&times;</button>
+            </div>
+            <div id="chat-container"></div>
+            <form id="chat-form">
+                <input type="text" id="user-input" placeholder="Ask me something..." required>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
