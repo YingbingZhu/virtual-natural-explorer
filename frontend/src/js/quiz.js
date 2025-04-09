@@ -105,3 +105,18 @@ document.addEventListener("DOMContentLoaded", () => {
         startQuiz();
     }
 });
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const container = document.getElementById("quiz-container");
+    const startBtn = document.getElementById("start-quiz-btn");
+
+    if (startBtn && container) {
+        startBtn.addEventListener("click", () => {
+            startQuiz();
+        });
+    } else if (container) {
+        // Auto start if button doesn't exist (maybe user came from another page)
+        startQuiz();
+    }
+});

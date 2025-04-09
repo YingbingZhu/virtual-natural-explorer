@@ -30,9 +30,9 @@ class HumanImpactZone {
 
     const intensity = 0.1;
     if (this.type === "pollution" && entity.type !== "plant") {
-      entity.energy -= intensity;
+      entity.energy -= intensity * 5;
     } else if (this.type === "deforestation" && entity.type === "plant") {
-      if (Math.random() < 0.01) entity.health = 0;
+      if (Math.random() < 0.2) entity.health = 0;
     } else if (this.type === "conservation") {
       if (entity.type === "plant") entity.health = Math.min(100, entity.health + 0.1);
       else entity.energy = Math.min(100, entity.energy + 0.2);
@@ -607,9 +607,11 @@ class Simulation {
 
   interactEntities() {
     // Apply human impact zones effects first
-    this.humanImpactZones.forEach(zone =>
-      zone.affectEntities(this.entities, this.humanImpact, (msg) => this.updateInfo(msg))
-    );
+    this.humanImpactZones.forEach(zone => {
+      this.entities.forEach(entity => {
+        zone.affectEntity(entity);
+      });
+    });
 
     // Handle entity interactions (predation and grazing)
     for (let i = 0; i < this.entities.length; i++) {
@@ -669,36 +671,34 @@ document.addEventListener("DOMContentLoaded", () => {
   window.resetSimulation = () => simulation.resetSimulation();
   window.updateSimulationSpeed = () => simulation.updateSimulationSpeed(); 
 
-  simulation.redrawCanvas();
-});
-
-
-// Inside Simulation class, assume canvas and zone logic
-document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("ecosystemCanvas");
-  simulation = new Simulation(canvas);
+  window.simulation = new Simulation(canvas);
 
   const activitySelect = document.getElementById("activityType");
   activitySelect.addEventListener("change", (e) => {
     simulation.selectedActivityType = e.target.value;
   });
 
-  canvas.addEventListener("click", (e) => {
-    if (!simulation.drawingActivity) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    simulation.humanImpactZones.push(new HumanImpactZone(x, y, simulation.selectedActivityType));
-    simulation.updateInfo(`Placed ${simulation.selectedActivityType} zone.`);
-    simulation.redrawCanvas();
-  });
+  if (canvas) {
+    canvas.addEventListener("click", (e) => {
+      if (!simulation.drawingActivity) return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      simulation.humanImpactZones.push(new HumanImpactZone(x, y, simulation.selectedActivityType));
+      simulation.updateInfo(`Placed ${simulation.selectedActivityType} zone.`);
+      simulation.redrawCanvas();
+    });
+  }
+
+  window.toggleActivityMode = function () {
+    simulation.drawingActivity = !simulation.drawingActivity;
+    const mode = simulation.drawingActivity ? "enabled" : "disabled";
+    simulation.updateInfo("Drawing mode " + mode + ". Click on canvas to place zone.");
+  };
+
+  simulation.redrawCanvas();
 });
-
-
-let simulation;
-
-function toggleActivityMode() {
-  simulation.drawingActivity = !simulation.drawingActivity;
-  const mode = simulation.drawingActivity ? "enabled" : "disabled";
-  simulation.updateInfo("Drawing mode " + mode + ". Click on canvas to place zone.");
-}
