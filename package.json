@@ -1,0 +1,16 @@
+{
+  "name": "virtual-animal-tour",
+  "version": "1.0.0",
+  "description": "An interactive web-based platform for exploring wildlife and ecosystems around the world.  Features include a world map with AI-powered wildlife chatbot, quizzes, and interactive ecosystem simulation.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \"npm run start --prefix backend\" \"npm run start --prefix frontend\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

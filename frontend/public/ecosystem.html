@@ -69,15 +69,15 @@
               <span class="info-icon" tabindex="0">ℹ️</span>
               <div class="tooltip-content temp-fixed">
                 <p><strong>Below 0°C (❄️ Snow):</strong> Slow plant growth, animals lose energy fast.</p>
-                <p><strong>0–10°C (⛈️ Stormy):</strong> Lower reproduction rates, energy drain increases.</p>
-                <p><strong>10–20°C (🌧️ Rainy):</strong> Balanced growth, some rain benefits.</p>
-                <p><strong>20–30°C (☀️ Sunny):</strong> Ideal for most life – peak growth and reproduction.</p>
+                <p><strong>0–10°C:</strong> Lower reproduction rates, energy drain increases.</p>
+                <p><strong>10–20°C:</strong> Balanced growth, some rain benefits.</p>
+                <p><strong>20–30°C:</strong> Ideal for most life – peak growth and reproduction.</p>
                 <p><strong>30°C+ (🔥 Heatwave):</strong> Water loss, higher energy drain, reduced plant regrowth.</p>
               </div>
             </div>
           </div>
         
-          <input type="range" id="temperatureSlider" min="-10" max="40" value="20" step="1"
+          <input type="range" id="temperatureSlider" min="-30" max="40" value="20" step="1"
                  aria-label="Set temperature in degrees Celsius" />
         
           <button id="applyTemperatureBtn" class="temperature-btn" aria-label="Apply selected temperature">
@@ -85,20 +85,15 @@
           </button>
         </div>
         
-
-        
-
-          <!-- Weather Control -->
-          <div class="control-group">
-            <label for="weather" class="weather-label">Set Weather:</label>
-            <select id="weather" onchange="changeWeather()" aria-label="Choose the weather condition">
-              <option value="sunny">☀️ Sunny (Ideal growth and energy conditions)</option>
-              <option value="rainy">🌧️ Rainy (Encourages grass growth and hydration)</option>
-              <option value="storm">⛈️ Storm (Occasional flashes, harder for prey)</option>
-              <option value="snow">❄️ Snow (Harsh on animals, reduces growth)</option>
-            </select>
-            <button onclick="changeWeather()">Change Weather</button>
-          </div>
+        <!-- Weather Control -->
+        <div class="control-group">
+          <label for="weather" class="weather-label">Set Weather:</label>
+          <select id="weather" aria-label="Choose the weather condition">
+            <option value="sunny">☀️ Sunny (Ideal conditions)</option>
+            <option value="rainy">🌧️ Rainy (Boosts grass growth)</option>
+          </select>
+          <button id="weatherBtn" onclick="changeWeather()">Change Weather</button>
+        </div>
 
           <!-- Simulation Speed -->
           <div class="control-group">
