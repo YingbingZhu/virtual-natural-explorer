@@ -4,163 +4,192 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interactive Ecosystem Simulation | Wildlife Wonders</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/ecosystem.css">
 </head>
 <body>
 
-    <!-- Navigation Bar -->
-    <nav>
-      <ul>
-          <li><a href="index.html">🌍 Home</a></li>
-          <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
-          <li><a href="ecosystem.html">🌱 Ecosystems</a></li>
-          <li><a href="quiz.html">🐻 Quizzes</a></li>
-          <li><a href="videos.html">🎥 Videos & Stories</a></li>
-      </ul>
-  </nav>
+<!-- Navigation Bar -->
+<nav>
+  <ul>
+    <li><a href="index.html">🌍 Home</a></li>
+    <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
+    <li><a href="ecosystem.html">🌱 Ecosystems</a></li>
+    <li><a href="quiz.html">🐻 Quizzes</a></li>
+    <li><a href="videos.html">🎥 Videos & Stories</a></li>
+  </ul>
+</nav>
 
-  <!-- Page Header -->
-  <header class="page-header">
-    <h1>🌱 Ecosystem Simulation</h1>
-    <p>
-      Explore how animals, plants, and humans interact in a dynamic ecosystem. Adjust human impact, weather, and simulation speed to see how changes affect the balance of nature.
-    </p>
-  </header>
+<!-- Page Header -->
+<header class="page-header">
+  <h1>🌱 Ecosystem Simulation</h1>
+  <p>
+    Explore how animals, plants, and humans interact in a dynamic ecosystem. Adjust human impact, weather, and simulation speed to see how changes affect the balance of nature.
+  </p>
+</header>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <section class="simulation-layout">
-      
-      <!-- Left Column: Controls & Educational Information -->
-      <section class="controls-section">
-        <h2 class="section-title">Controls & Information</h2>
-        <div class="description-details">
-          <p>
-            In this simulation, key natural processes have been fixed to reflect realistic ecological behavior:
-            <ul>
-              <li><strong>Prey behaviors:</strong> Prey animals (gazelles, rabbits) have a set range to detect food and a fixed speed for evasion.</li>
-              <li><strong>Plant growth:</strong> Grass regrows is affected by weather conditions.</li>
-              <li><strong>Predator-prey dynamics:</strong> Predators (lions) hunt prey, and these interactions drive the ecosystem balance.</li>
-              <li><strong>Human Impact:</strong> Higher human impact increases pollution and deforestation, reducing overall health.</li>
-            </ul>
-            Use the controls below to interact with the ecosystem.
+<!-- Main Content -->
+<main class="main-content">
+  <section class="simulation-layout">
+
+    <!-- Left Column: Controls -->
+    <section class="controls-section">
+      <h2 class="section-title">Controls & Information</h2>
+      <div class="controls">
+
+        <!-- Animal Selection -->
+        <div class="control-group">
+          <label class="animal-label">
+            Animal to Add &amp; Number:
+          </label>
+          <div class="combined-control">
+            <select id="animalSelect" aria-label="Select an animal or plant to add">
+              <option value="wolf">🐺 Wolf (Predator)</option>
+              <option value="sheep">🐑 Sheep (Prey)</option>
+              <option value="grass">🌿 Grass (Plant)</option>
+            </select>
+            <input type="range" id="animalNumber" min="1" max="20" value="5"
+                   oninput="document.getElementById('animalNumberValue').textContent = this.value"
+                   aria-label="Set number of animals to add" />
+            <span id="animalNumberValue" aria-live="polite">5</span>
+          </div>
+          <button onclick="addEntity()" aria-label="Add selected animal to ecosystem">
+            Add to Ecosystem
+          </button>
+        </div>
+
+
+        <!-- Temperature -->
+        <div class="control-group">
+          <div class="label-with-tooltip">
+            <label for="temperatureSlider">
+              Set Temperature: <span id="temperatureValue">20°C</span>
+            </label>
+            <div class="tooltip-container temp-tooltip">
+              <span class="info-icon" tabindex="0">ℹ️</span>
+              <div class="tooltip-content temp-fixed">
+                <p><strong>Below 0°C (❄️ Snow):</strong> Slow plant growth, animals lose energy fast.</p>
+                <p><strong>0–10°C (⛈️ Stormy):</strong> Lower reproduction rates, energy drain increases.</p>
+                <p><strong>10–20°C (🌧️ Rainy):</strong> Balanced growth, some rain benefits.</p>
+                <p><strong>20–30°C (☀️ Sunny):</strong> Ideal for most life – peak growth and reproduction.</p>
+                <p><strong>30°C+ (🔥 Heatwave):</strong> Water loss, higher energy drain, reduced plant regrowth.</p>
+              </div>
+            </div>
+          </div>
+        
+          <input type="range" id="temperatureSlider" min="-10" max="40" value="20" step="1"
+                 aria-label="Set temperature in degrees Celsius" />
+        
+          <button id="applyTemperatureBtn" class="temperature-btn" aria-label="Apply selected temperature">
+            Apply Temperature
+          </button>
+        </div>
+        
+
+        
+
+          <!-- Weather Control -->
+          <div class="control-group">
+            <label for="weather" class="weather-label">Set Weather:</label>
+            <select id="weather" onchange="changeWeather()" aria-label="Choose the weather condition">
+              <option value="sunny">☀️ Sunny (Ideal growth and energy conditions)</option>
+              <option value="rainy">🌧️ Rainy (Encourages grass growth and hydration)</option>
+              <option value="storm">⛈️ Storm (Occasional flashes, harder for prey)</option>
+              <option value="snow">❄️ Snow (Harsh on animals, reduces growth)</option>
+            </select>
+            <button onclick="changeWeather()">Change Weather</button>
+          </div>
+
+          <!-- Simulation Speed -->
+          <div class="control-group">
+            <label for="simulationSpeed">
+              <div class="label-with-tooltip">
+                <span>Simulation Speed <span id="simulationSpeedValue">5</span></span>
+                <div class="tooltip-container">
+                  <span class="info-icon" tabindex="0">ℹ️</span>
+                  <div class="tooltip-content">
+                    Adjust the speed of simulation from slow (1) to fast (10).
+                  </div>
+                </div>
+              </div>
+            </label>
+            <input type="range" id="simulationSpeed" min="1" max="10" value="5"
+                  oninput="document.getElementById('simulationSpeedValue').textContent = this.value; updateSimulationSpeed();"
+                  aria-label="Set simulation speed" />
+          </div>
+
+        <!-- Human Activity -->
+        <div class="control-group">
+          <label for="activityType">
+            <div class="label-with-tooltip">
+              <span>Select Human Activity</span>
+              <div class="tooltip-container">
+                <span class="info-icon" tabindex="0">ℹ️</span>
+                <div class="tooltip-content">
+                  Click the canvas to place the selected human activity zone.
+                </div>
+              </div>
+            </div>
+          </label>
+          <select id="activityType">
+            <option value="pollution" title="Pollution decreases animal energy in the affected area.">☁️ Pollution</option>
+            <option value="deforestation" title="Deforestation randomly kills nearby plants.">🪓 Deforestation</option>
+            <option value="conservation" title="Conservation restores plant health and boosts animal energy.">🛡️ Conservation</option>
+          </select>
+          <button onclick="toggleActivityMode()">Activate Activity Drawing</button>
+
+          <p id="activityDescription" class="activity-description"></p>
+        </div>
+      </div>
+
+        <!-- Simulation Control Buttons -->
+      <div class="control-row button-group-row">
+        <button onclick="startSimulation()" aria-label="Start the ecosystem simulation">
+          ▶ Start
+        </button>
+        <button onclick="stopSimulation()" aria-label="Stop the ecosystem simulation">
+          ⏹ Stop
+        </button>
+        <button onclick="resetSimulation()" aria-label="Reset the ecosystem simulation">
+          🔄 Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- Right Panel: What's Happening & Canvas -->
+    <section class="right-panel">
+
+      <!-- Info and Graph Container-->
+      <div class="info-graph-row">
+        <div class="education-container" id="education-panel" aria-live="polite">
+          <h3 class="section-title">What's Happening?</h3>
+          <p id="eco-info">
+            Add animals and plants, then start the simulation to see a living ecosystem!
           </p>
         </div>
-        <div class="controls">
-          <!-- Row 1: Animal Selection & Weather -->
-          <div class="control-row">
-            <div class="control-group">
-              <label>Animal to Add &amp; Number:</label>
-              <div class="combined-control">
-                <select id="animalSelect" aria-label="Select an animal or plant to add">
-                  <option value="wolf">🐺 Wolf (Predator)</option>
-                  <option value="sheep">🐑 Sheep (Prey)</option>
-                  <option value="grass">🌿 Grass (Plant)</option>
-                </select>
-                <input type="range" id="animalNumber" min="1" max="20" value="5"
-                       oninput="document.getElementById('animalNumberValue').textContent = this.value"
-                       aria-label="Set number of animals to add" />
-                <span id="animalNumberValue" aria-live="polite">5</span>
-              </div>
-              <button onclick="addEntity()" aria-label="Add selected animal to ecosystem">
-                Add to Ecosystem
-              </button>
-            </div>
-            <div class="control-group">
-              <label for="weather">Change Weather:</label>
-              <select id="weather" aria-label="Select weather condition">
-                <option value="sunny">☀️ Sunny</option>
-                <option value="rainy">🌧️ Rainy</option>
-                <option value="storm">⛈️ Storm</option>
-              </select>
-              <button onclick="changeWeather()" aria-label="Apply selected weather condition">
-                Change Weather
-              </button>
-              <div class="description-details">
-                <p><strong>Sunny:</strong> Normal growth and predation.</p>
-                <p><strong>Rainy:</strong> Faster grass growth &amp; improved animal health.</p>
-                <p><strong>Storm:</strong> Reduced predator speed, higher energy drain.</p>
-              </div>
-            </div>
-          </div>
 
-          <!-- Row 2: Simulation Speed Control -->
-          <div class="control-row">
-            <div class="control-group">
-              <label for="simulationSpeed">
-                Simulation Speed 
-                <span class="info-icon" title="Adjust the simulation speed. Lower values slow down the simulation, while higher values speed it up.">ℹ</span>
-              </label>
-              <input type="range" id="simulationSpeed" min="1" max="10" value="5"
-                     oninput="document.getElementById('simulationSpeedValue').textContent = this.value; updateSimulationSpeed();"
-                     aria-label="Set simulation speed" />
-              <span id="simulationSpeedValue" aria-live="polite">5</span>
-            </div>
+        <div class="graph-container">
+          <h3 class="section-title">Population Graph</h3>
+          <canvas id="populationGraph" aria-label="Population graph canvas"></canvas>
+          <div id="graphLegend" class="graph-legend">
+            <span style="color:red;">●</span> Wolves
+            <span style="color:blue;">●</span> Sheep
+            <span style="color:green;">●</span> Grass              
           </div>
-
-          <!-- Row 3: Simulation Buttons -->
-          <div class="control-row">
-            <div class="control-group">
-              <button onclick="startSimulation()" aria-label="Start the ecosystem simulation">
-                ▶ Start Simulation
-              </button>
-              <button onclick="stopSimulation()" aria-label="Stop the ecosystem simulation">
-                ⏹ Stop Simulation
-              </button>
-              <button onclick="resetSimulation()" aria-label="Reset the ecosystem simulation">
-                🔄 Reset
-              </button>
-            </div>
-          </div>
-
-          <!-- Row 4: Human Impact -->
-          <div class="control-row">
-            <label for="activityType">Select Human Activity:</label>
-            <select id="activityType">
-              <option value="pollution">☁️ Pollution</option>
-              <option value="deforestation">🪓 Deforestation</option>
-              <option value="conservation">🛡️ Conservation</option>
-            </select>
-            <button onclick="toggleActivityMode()">Activate Activity Drawing</button>
-          </div>
-
-          <div class="control-row">
-            <label for="simulationSpeed">Speed:</label>
-            <input type="range" id="simulationSpeed" min="1" max="10" value="5" oninput="simulation.updateSimulationSpeed()" />
-            <span id="simulationSpeedValue">5</span>
-          </div>
-
         </div>
-      </section>
-      
-      <!-- Right Column: Simulation Canvas & Status -->
-      <section class="simulation-canvas-container">
+      </div>
+
+      <!-- Ecosystem Canvas Section -->
+      <div class="simulation-canvas-container">
         <h2 class="section-title">Your Ecosystem</h2>
         <canvas id="ecosystemCanvas" aria-label="Interactive ecosystem simulation canvas"></canvas>
-        <div class="status-row">
-          <div class="graph-container">
-            <h3 class="section-title">Population Graph</h3>
-            <canvas id="populationGraph" aria-label="Population graph canvas"></canvas>
-            <div id="graphLegend" class="graph-legend">
-              <span style="color:red;">●</span> Wolves
-              <span style="color:blue;">●</span> Sheep
-              <span style="color:green;">●</span> Grass              
-            </div>
-          </div>
-          <div id="eco-status" class="status-bar">
-            Wolves: 0, Sheep: 0, Grass: 0, Human Impact: 0%
-          </div>          
-          <div class="education-container" id="education-panel" aria-live="polite">
-            <h3 class="section-title">What's Happening?</h3>
-            <p id="eco-info">
-              Add animals and plants, then start the simulation to see a living ecosystem!
-            </p>
-          </div>
+        <div id="eco-status" class="status-bar">
+          Wolves: 0, Sheep: 0, Grass: 0, Human Impact: 0%
         </div>
-      </section>
-      
+      </div>
     </section>
-  </main>
-
+  </section>
+</main>
 
 </body>
 </html>

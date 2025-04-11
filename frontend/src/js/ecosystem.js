@@ -22,7 +22,21 @@ class HumanImpactZone {
       conservation: "rgba(0,255,0,0.3)"
     }[this.type];
     ctx.fill();
+  
+    // Draw emoji in the center
+    const emoji = {
+      pollution: "💨",
+      deforestation: "🪓",
+      conservation: "🌱"
+    }[this.type];
+  
+    ctx.font = "20px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "black"; 
+    ctx.fillText(emoji, this.x, this.y);
   }
+  
 
   affectEntity(entity) {
     const dist = Math.hypot(this.x - entity.x, this.y - entity.y);
@@ -193,7 +207,11 @@ class Simulation {
     this.simulationRunning = false;
     this.simulationDelay = 400; // default speed (can be modified via slider)
     this.raindrops = [];
+    this.snowflakes = [];
+    this.lightning = false;
+    this.sun = null;
     this.humanImpactZones = [];
+    this.populationHistory = [];
     this.educationalMessages = [];
 
     // Prey behavior settings (default values)
@@ -202,15 +220,12 @@ class Simulation {
     this.evasionStrength = 0.05;
     this.plantRegrowthChance = 0.7;
 
-    // Human activity levels (pollution, deforestation, conservation)
-    this.humanImpact = {
-      pollution: 0,
-      deforestation: 0,
-      conservation: 0
-    };
+    this.drawingActivity = false;
+    this.selectedActivityType = 'pollution';
 
-    // For tracking population changes over time
-    this.populationHistory = [];
+    // tracking temperatrue
+    this.temperature = 20;
+
     this.tick = 0;  // simulation tick counter
 
     // Initialize the simulation (setup)
@@ -223,7 +238,6 @@ class Simulation {
   setup() {
     this.resetSimulation();
     this.updatePreySettings();
-    this.updateHumanActivity();
     this.redrawCanvas();
     this.logInfo('Simulation setup complete.');
   }
@@ -235,11 +249,9 @@ class Simulation {
     this.humanImpactZones = [];
     this.weather = 'sunny';
     this.raindrops = [];
-    this.humanImpact = { pollution: 0, deforestation: 0, conservation: 0 };
+    // this.humanImpact = { pollution: 0, deforestation: 0, conservation: 0 };
     this.educationalMessages = [];
-    this.populationHistory = [];
     this.tick = 0;
-    this.updateHumanActivity();
     if (this.ctx) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
@@ -284,49 +296,23 @@ class Simulation {
     }
   }
 
-  updateHumanActivity() {
-    // Read human impact from DOM and update related variables
-    const impactEl = document.getElementById('humanImpact');
-    if (impactEl) {
-      const impactValue = parseInt(impactEl.value);
-      this.humanImpact.pollution = Math.min(100, impactValue);
-      this.humanImpact.deforestation = Math.min(100, impactValue);
-      this.humanImpact.conservation = Math.max(0, 100 - impactValue);
-      document.getElementById('humanImpactValue').textContent = `${impactValue}%`;
-      this.updateInfo(`Human Impact set to ${impactValue}%!`);
-      console.log('Human activity:', this.humanImpact);
-    }
-    this.updateHumanImpactZones();
-  }
-
-  updateHumanImpactZones() {
-    // Create impact zones based on current human impact levels
-    this.humanImpactZones = [];
-    const totalImpact = this.humanImpact.pollution + this.humanImpact.deforestation + this.humanImpact.conservation;
-    const zoneCount = Math.floor(totalImpact / 25);
-    for (let i = 0; i < zoneCount; i++) {
-      const x = Math.random() * this.canvas.width;
-      const y = Math.random() * this.canvas.height;
-      const radius = 50 + Math.random() * 30;
-      let type;
-      const rand = Math.random() * totalImpact;
-      if (rand < this.humanImpact.pollution) type = 'pollution';
-      else if (rand < this.humanImpact.pollution + this.humanImpact.deforestation) type = 'deforestation';
-      else type = 'conservation';
-      this.humanImpactZones.push(new HumanImpactZone(x, y, type, radius));
-    }
-    console.log('Human impact zones:', this.humanImpactZones.length);
-  }
-
   /* --------------------------- */
   /* SIMULATION SPEED CONTROL    */
   /* --------------------------- */
   updateSimulationSpeed() {
     const speedSlider = document.getElementById('simulationSpeed');
-    if (speedSlider) {
-      // For a slider value of 1, delay = 2000ms; for 10, delay = 200ms.
+    const valueDisplay = document.getElementById('simulationSpeedValue');
+  
+    if (speedSlider && valueDisplay) {
       const speedValue = parseInt(speedSlider.value, 10);
       this.simulationDelay = 2000 / speedValue;
+  
+      // Update visible value (if not already handled in HTML inline)
+      valueDisplay.textContent = speedValue;
+  
+      this.updateInfo(`Simulation speed set to ${speedValue}`);
+    } else {
+      console.warn('Speed slider or value display not found.');
     }
   }
   
@@ -342,16 +328,50 @@ class Simulation {
       return;
     }
     this.weather = select.value;
-    if (this.weather === 'rainy') {
-      this.raindrops = Array.from({ length: 50 }, () => ({
-        x: Math.random() * this.canvas.width,
-        y: Math.random() * this.canvas.height
-      }));
-    } else {
-      this.raindrops = [];
+
+    this.raindrops = [];
+    this.snowflakes = [];
+    this.lightning = false;
+    this.sun = null;
+
+    switch (this.weather) {
+      case 'rainy':
+        this.raindrops = Array.from({ length: 50 }, () => ({
+          x: Math.random() * this.canvas.width,
+          y: Math.random() * this.canvas.height
+        }));
+        break;
+      case 'storm':
+        this.raindrops = Array.from({ length: 70 }, () => ({
+          x: Math.random() * this.canvas.width,
+          y: Math.random() * this.canvas.height
+        }));
+        this.lightning = true; // use in draw to flash canvas
+        break;
+      case 'snow':
+        this.snowflakes = Array.from({ length: 40 }, () => ({
+          x: Math.random() * this.canvas.width,
+          y: Math.random() * this.canvas.height,
+          r: Math.random() * 2 + 1
+        }));
+        break;
+      case 'sunny':
+        this.sun = { x: this.canvas.width - 70, y: 70, radius: 40 };
+        break;
     }
+
     this.updateInfo(`Weather changed to ${this.weather}!`);
     console.log('Weather:', this.weather);
+    this.redrawCanvas();
+  }
+
+  updateTemperature() {
+    const slider = document.getElementById("temperatureSlider");
+    const temp = parseInt(slider.value, 10);
+    this.temperature = temp;
+    document.getElementById("temperatureValue").textContent = `${temp}°C`;
+  
+    this.updateInfo(`Temperature set to ${temp}°C`);
     this.redrawCanvas();
   }
 
@@ -362,16 +382,26 @@ class Simulation {
       this.educationalMessages[this.educationalMessages.length - 1] !== text
     ) {
       this.educationalMessages.push(text);
-      if (this.educationalMessages.length > 5) this.educationalMessages.shift();
+      if (this.educationalMessages.length > 3) this.educationalMessages.shift(); 
+  
       const ecoInfo = document.getElementById('eco-info');
       if (ecoInfo) {
-        ecoInfo.innerHTML = this.educationalMessages.join('<br>');
+        ecoInfo.innerHTML = '';
+        this.educationalMessages.forEach(msg => {
+          const p = document.createElement('p');
+          p.textContent = msg;
+          ecoInfo.appendChild(p);
+        });
+  
+        // Auto-scroll to bottom
+        ecoInfo.scrollTop = ecoInfo.scrollHeight;
       } else {
         console.error('eco-info element not found!');
       }
       console.log('Info:', text);
     }
   }
+  
 
   logInfo(text) {
     console.log(text);
@@ -415,7 +445,6 @@ class Simulation {
     this.redrawCanvas();
   }
   
-  
 
   /* --------------------------- */
   /* RENDERING & ENVIRONMENT     */
@@ -424,72 +453,133 @@ class Simulation {
     if (!this.ctx) return;
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // Draw background with pollution overlay
-    const pollutionLevel = this.humanImpact.pollution / 100;
-    ctx.fillStyle = `rgba(100, 100, 100, ${pollutionLevel * 0.5})`;
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // Set weather background
+  
+    // Set weather sky background
     if (this.weather === 'sunny') {
-      ctx.fillStyle = 'rgba(135, 206, 235, 0.8)';
-    } else if (this.weather === 'rainy') {
-      ctx.fillStyle = 'rgba(176, 196, 222, 0.8)';
+      ctx.fillStyle = 'rgba(135, 206, 235, 0.8)'; // sky blue
+    } else if (this.weather === 'rainy' || this.weather === 'storm') {
+      ctx.fillStyle = 'rgba(176, 196, 222, 0.8)'; // cloudy
     } else {
-      ctx.fillStyle = 'rgba(70, 130, 180, 0.8)';
+      ctx.fillStyle = 'rgba(70, 130, 180, 0.8)'; // default cloudy blue
     }
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // Draw raindrops for rainy weather
-    if (this.weather === 'rainy') {
+  
+    // Temperature overlay
+    const temp = this.temperature;
+    let tempOverlay = "";
+  
+    if (temp < 0) {
+      tempOverlay = "rgba(200, 240, 255, 0.3)";  // Cold blue
+    } else if (temp < 10) {
+      tempOverlay = "rgba(180, 220, 255, 0.2)";  // Chilly
+    } else if (temp < 20) {
+      tempOverlay = "rgba(255, 255, 255, 0.1)";  // Neutral
+    } else if (temp <= 30) {
+      tempOverlay = "rgba(255, 250, 200, 0.2)";  // Warm yellow
+    } else {
+      tempOverlay = "rgba(255, 160, 122, 0.3)";  // Hot reddish
+    }
+  
+    ctx.fillStyle = tempOverlay;
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  
+    // Sunny – draw sun
+    if (this.sun) {
+      ctx.beginPath();
+      ctx.arc(this.sun.x, this.sun.y, this.sun.radius, 0, 2 * Math.PI);
+      ctx.fillStyle = "yellow";
+      ctx.fill();
+    }
+  
+    // Rainy and Storm – raindrops
+    if (this.raindrops) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       this.raindrops.forEach(drop => {
         ctx.fillRect(drop.x, drop.y, 2, 10);
         drop.y += 5;
-        if (drop.y > this.canvas.height) drop.y = 0;
+        if (drop.y > this.canvas.height) {
+          drop.y = 0;
+          drop.x = Math.random() * this.canvas.width;
+        }
       });
-    } else if (this.weather === 'storm' && Math.random() < 0.05) {
-      ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
-      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      setTimeout(() => this.redrawCanvas(), 50);
     }
-
-    // Render human impact zones and entities
-    this.humanImpactZones.forEach(zone => zone.draw(this.ctx));
-    this.entities.forEach(entity => entity.draw(this.ctx));
+  
+    // Snow
+    if (this.snowflakes) {
+      ctx.fillStyle = "white";
+      this.snowflakes.forEach(flake => {
+        ctx.beginPath();
+        ctx.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2);
+        ctx.fill();
+        flake.y += 1;
+        flake.x += Math.sin(flake.y / 10) * 0.5;
+        if (flake.y > this.canvas.height) {
+          flake.y = 0;
+          flake.x = Math.random() * this.canvas.width;
+        }
+      });
+    }
+  
+    // Storm lightning flash
+    if (this.weather === 'storm' && Math.random() < 0.03) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      setTimeout(() => this.redrawCanvas(), 50); // short flash
+    }
+  
+    // Zones and entities
+    this.humanImpactZones.forEach(zone => zone.draw(ctx));
+    this.entities.forEach(entity => entity.draw(ctx));
+  
+    // Continue loop if running
+    if (this.simulationRunning) {
+      requestAnimationFrame(() => this.redrawCanvas());
+    }
   }
-
+  
   /* --------------------------- */
   /* SIMULATION LOOP (GO)        */
   /* --------------------------- */
   simulate() {
     if (!this.simulationRunning) return;
   
-    // Step 1: Clear and redraw background
+    // Clear and redraw background
     this.redrawCanvas();
+    
+    // apply temperature effects
+    this.entities.forEach(entity => {
+      if (this.temperature < 0) {
+        entity.energy -= 0.5;
+        if (entity.type === 'plant') entity.health -= 0.2;
+      } else if (this.temperature > 30) {
+        entity.energy -= 0.3;
+        if (entity.type === 'plant' && Math.random() < 0.05) entity.health -= 1;
+      }
+    });
   
-    // Step 2: Rain grows new grass
+    // Rain grows new grass
     if (this.weather === 'rainy' && Math.random() < 0.02) {
       this.entities.push(new Entity(
         Math.random() * this.canvas.width,
         Math.random() * this.canvas.height,
         'plant',
-        '🌳'
+        '🌿'
       ));
-      this.updateInfo('Rain grew new grass!');
+      this.updateInfo('Rain grew new plant!');
     }
   
-    // Step 3: Move and render each entity
+    //  Move and render each entity
     this.entities.forEach(entity => {
       entity.move(this);
-      entity.draw(this.ctx, this.humanImpact);
+      entity.draw(this.ctx);
+      // draw(this.ctx, this.humanImpact);
     });
   
-    // Step 4: Human impact and interactions
-    this.applyHumanActivityEffects();
+    // Human impact and interactions
+    // this.applyHumanActivityEffects();
     this.interactEntities();
   
-    // Step 5: Update stats and population graph
+    // Update stats and population graph
     const predators = this.entities.filter(e => e.type === 'predator').length;
     const prey = this.entities.filter(e => e.type === 'prey').length;
     const plants = this.entities.filter(e => e.type === 'plant' && e.health > 0).length;
@@ -504,10 +594,8 @@ class Simulation {
     } else if (plants === 0 && prey > 0) {
       this.updateInfo('No grass! Prey will struggle!');
     } 
-  
     this.populationHistory.push({ predators, prey, plants });
     this.updateGraph();
-  
     // Schedule next frame
     setTimeout(() => this.simulate(), this.simulationDelay);
   }
@@ -515,7 +603,7 @@ class Simulation {
   updateStatus(predators, prey, plants) {
     const status = document.getElementById("eco-status");
     if (status) {
-      status.innerHTML = `Wolves: ${predators}, Sheep: ${prey}, Grass: ${plants}. Human Impact: ${this.humanImpact?.pollution || 0}%`;
+      status.innerHTML = `Wolves: ${predators}, Sheep: ${prey}, Grass: ${plants}.`;
     }
   }
   
@@ -529,7 +617,7 @@ class Simulation {
       }
       this.simulationRunning = true;
       this.updateInfo('Simulation started!');
-      this.simulate(); // 🚀 Start the loop here
+      this.simulate(); 
     }
   }
   
@@ -540,7 +628,6 @@ class Simulation {
     this.updateInfo('Simulation stopped.');
     console.log('Simulation stopped.');
   }
-  
   /* --------------------------- */
   /* POPULATION GRAPH            */
   /* --------------------------- */
@@ -581,28 +668,6 @@ class Simulation {
     drawLine('red', 'predators');
     drawLine('blue', 'prey');
     drawLine('green', 'plants');
-  }
-  
-
-  /* --------------------------- */
-  /* HUMAN IMPACT & INTERACTIONS */
-  /* --------------------------- */
-  applyHumanActivityEffects() {
-    for (let i = this.entities.length - 1; i >= 0; i--) {
-      const entity = this.entities[i];
-      if (entity.type === 'prey') {
-        if (Math.random() < this.humanImpact.pollution * 0.001) {
-          this.updateInfo('A prey was hunted by humans!');
-          this.entities.splice(i, 1);
-          continue;
-        }
-      } else if (entity.type === 'plant') {
-        if (Math.random() < this.humanImpact.deforestation * 0.001) {
-          entity.health = 0;
-          this.updateInfo('A plant was removed due to deforestation!');
-        }
-      }
-    }
   }
 
   interactEntities() {
@@ -655,24 +720,45 @@ class Simulation {
   }
 }
 
+/**
+ * Determines the weather condition based on the given temperature.
+ *
+ * @param {number} temp - The temperature in degrees Celsius.
+ * @returns {string} The weather condition string。
+ */
+function getWeatherFromTemperature(temp) {
+  if (temp < 0) return "snow";
+  if (temp < 10) return "storm";
+  if (temp < 20) return "rainy";
+  if (temp <= 30) return "sunny";
+  return "heatwave";
+}
+
+
 /* --------------------------- */
 /* UI CONTROL FUNCTIONS        */
 /* --------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
   const simulation = new Simulation();
+  window.simulation = simulation
 
   // Expose simulation functions globally for UI controls
   window.updatePreySettings = () => simulation.updatePreySettings();
-  window.updateHumanActivity = () => simulation.updateHumanActivity();
   window.addEntity = () => simulation.addEntity();
   window.changeWeather = () => simulation.changeWeather();
+  window.updateTemperature  = () => simulation.updateTemperature();
   window.startSimulation = () => simulation.startSimulation();
   window.stopSimulation = () => simulation.stopSimulation();
   window.resetSimulation = () => simulation.resetSimulation();
   window.updateSimulationSpeed = () => simulation.updateSimulationSpeed(); 
 
+  const applyTempBtn = document.getElementById("applyTemperatureBtn");
+  if (applyTempBtn) {
+    applyTempBtn.addEventListener("click", () => simulation.updateTemperature());
+  }
+  
   const canvas = document.getElementById("ecosystemCanvas");
-  window.simulation = new Simulation(canvas);
+  // window.simulation = new Simulation(canvas);
 
   const activitySelect = document.getElementById("activityType");
   activitySelect.addEventListener("change", (e) => {
@@ -696,9 +782,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.toggleActivityMode = function () {
     simulation.drawingActivity = !simulation.drawingActivity;
+  
+    const button = document.querySelector('button[onclick="toggleActivityMode()"]');
+    if (button) {
+      button.textContent = simulation.drawingActivity
+        ? "Deactivate Activity Drawing"
+        : "Activate Activity Drawing";
+    }
+  
     const mode = simulation.drawingActivity ? "enabled" : "disabled";
     simulation.updateInfo("Drawing mode " + mode + ". Click on canvas to place zone.");
   };
 
+  window.updateActivityDescription = function () {
+    const descriptions = {
+      pollution: "💨 <strong>Pollution Zone:</strong> Uh oh! A smoggy cloud settles in... animals nearby lose energy fast. Not a place to hang out for too long!",
+      deforestation: "🪓 <strong>Deforestation Zone:</strong> Trees fall, and grass struggles to grow. Plants caught in this area might not survive. 🌲💔",
+      conservation: "🌱 <strong>Conservation Zone:</strong> Nature's safe haven! 🛡️ Animals and plants recover here, slowly regaining their strength and health. 🌿💖"
+    };
+  
+    const select = document.getElementById("activityType");
+    const descEl = document.getElementById("activityDescription");
+    const selected = select.value;
+  
+    descEl.innerHTML = descriptions[selected] || "";
+  }
   simulation.redrawCanvas();
+
+  activitySelect.addEventListener("change", (e) => {
+    simulation.selectedActivityType = e.target.value;
+    updateActivityDescription(); // update the text
+  });
+  
+  updateActivityDescription(); // call it once on load too
 });
