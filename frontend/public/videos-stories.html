@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎥 Videos & Stories - Wildlife Education</title>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">🌍 Home</a></li>
+            <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
+            <li><a href="ecosystem.html">🌱 Ecosystems</a></li>
+            <li><a href="quiz.html">🐻 Quizzes</a></li>
+            <li><a href="videos-stories.html">🎥 Videos & Stories</a></li>
+        </ul>
+    </nav>
+
+  <header class="page-header">
+    <h1>🎥 Wildlife Videos & Stories</h1>
+    <p>Learn about ecosystems through animated videos and magical AI stories!</p>
+  </header>
+
+  <section class="tab-controls">
+    <button class="tab-btn active" data-tab="videos">📺 Videos</button>
+    <button class="tab-btn" data-tab="stories">📖 Tell a Story</button>
+  </section>
+
+  <main>
+    <section id="tab-videos" class="tab-content active">
+      <div class="video-category">
+        <h3>🌍 Africa</h3>
+        <iframe src="https://www.youtube.com/embed/9_I9sz82mLc" allowfullscreen></iframe>
+        <p>Explore African wildlife: lions, elephants, and more! <a href="https://www.wwf.org.uk/where-we-work/mau-mara-serengeti" target="_blank">Learn More</a></p>
+      </div>
+
+      <div class="video-category">
+        <h3>🌎 North America</h3>
+        <iframe src="https://www.youtube.com/embed/gNkwU_-zaDQ" allowfullscreen></iframe>
+        <p>Discover eagles, bears, and bison of the Great Plains. <a href="https://www.worldwildlife.org/places/great-plains" target="_blank">Learn More</a></p>
+      </div>
+
+      <div class="video-category">
+        <h3>🌏 Asia</h3>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/fKmqkGoHWtc?si=Ctzk6kl1qL3-kL7V" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <p>Explore the rich biodiversity of Asia, home to tigers, pandas, and unique bird species.
+            <a href="https://www.worldwildlife.org/places/greater-mekong" target="_blank">Explore Asian Wildlife</a>.
+        </p>
+    </div>
+
+    <div class="video-category">
+        <h3>🌎 South America</h3>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/avjJqaV8B1c?si=cQb7ZrlpWPM2aJDd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <p>Experience the Amazon rainforest's incredible ecosystem with jaguars, macaws, and sloths.
+            <a href="https://www.worldwildlife.org/places/amazon" target="_blank">Explore South American Wildlife</a>.
+        </p>
+    </div>
+
+    <div class="video-category">
+        <h3>🌏 Australia</h3>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/2QoOpf3Gt9w?si=Keg6r76t77Rt6w7Z" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <p>Learn about Australia's unique wildlife, including kangaroos, koalas, and the Great Barrier Reef.
+            <a href="https://www.australianwildlife.org/" target="_blank">Explore Australian Wildlife</a>.
+        </p>
+    </div>
+
+    <div class="video-category">
+        <h3>🌍 Antarctica</h3>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/SFX5IEZAUco?si=cmNZrqy8gj7CQc9r" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        <p>Discover the icy world of Antarctica and its wildlife, including penguins, seals, and whales.
+            <a href="https://www.wwf.org.uk/where-we-work/antarctic" target="_blank">Explore Antarctic Wildlife</a>.
+        </p>
+    </div>
+
+      <!-- (Repeat other continents as needed) -->
+    </section>
+
+    <section id="tab-stories" class="tab-content">
+      <div class="story-generator">
+        <h3>📖 AI Story Generator</h3>
+        <label for="story-continent">Choose a continent:</label>
+        <select id="story-continent">
+          <option>Africa</option>
+          <option>North America</option>
+          <option>South America</option>
+          <option>Asia</option>
+          <option>Australia</option>
+          <option>Antarctica</option>
+        </select>
+
+        <label for="story-animal">Animal:</label>
+        <input id="story-animal" placeholder="e.g., lion" />
+
+        <label for="story-name">Your Character's Name:</label>
+        <input id="story-name" placeholder="e.g., Lila" />
+
+        <button id="generate-story">✨ Tell Me a Story</button>
+
+        <div id="story-output" class="story-box"></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
