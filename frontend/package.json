@@ -14,7 +14,6 @@
     "start": "webpack serve"
   },
   "dependencies": {
-    "@maptiler/sdk": "^3.0.3",
     "jquery": "^3.7.1",
     "leaflet": "^1.9.4"
   }

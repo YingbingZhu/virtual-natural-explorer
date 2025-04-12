@@ -1,4 +1,6 @@
-import * as maptilersdk from '@maptiler/sdk';
+// --------------------------------------------------
+// Imports & CSS
+// --------------------------------------------------
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import '../css/styles.css';
@@ -8,6 +10,9 @@ import '../css/chat.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
+// --------------------------------------------------
+// Map Initialization
+// --------------------------------------------------
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
@@ -15,7 +20,6 @@ L.Icon.Default.mergeOptions({
 });
 
 const map = L.map('map').setView([0, 20], 2);
-
 L.tileLayer(`https://api.maptiler.com/maps/basic-v2/256/{z}/{x}/{y}.png?key=${process.env.MAPTILER_API_KEY}`, {
   attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a>',
 }).addTo(map);
@@ -23,195 +27,307 @@ L.tileLayer(`https://api.maptiler.com/maps/basic-v2/256/{z}/{x}/{y}.png?key=${pr
 const iconicMarkers = [];
 const detailedMarkers = [];
 
+// Load animal markers
 fetch('data/animals.json')
   .then(res => res.json())
   .then(data => {
     data.regions.forEach(region => {
       createIconicMarker(region.iconic);
-      region.detailed.forEach(animal => {
-        createDetailedMarker(animal);
-      });
+      region.detailed.forEach(animal => createDetailedMarker(animal));
     });
-
-    toggleMarkers(); // initial toggle after loading
+    toggleMarkers();
   });
 
-function createIconicMarker(animal) {
+const createIconicMarker = animal => {
   const marker = L.marker([animal.coordinates[1], animal.coordinates[0]], {
     icon: L.icon({
       iconUrl: animal.image,
       iconSize: animal.iconSize,
-      iconAnchor: [animal.iconSize[0] / 2, animal.iconSize[1] / 2]
-    })
-  }).on('click', () => {
-    openChatPopup(animal.name);
-  });
-
+      iconAnchor: [animal.iconSize[0] / 2, animal.iconSize[1] / 2],
+    }),
+  }).on('click', () => openChatPopup(animal.name));
   iconicMarkers.push(marker);
   marker.addTo(map);
-}
+};
 
-function createDetailedMarker(animal) {
+const createDetailedMarker = animal => {
   const marker = L.marker([animal.coordinates[1], animal.coordinates[0]], {
     icon: L.icon({
       iconUrl: animal.image,
       iconSize: animal.iconSize,
-      iconAnchor: [animal.iconSize[0] / 2, animal.iconSize[1] / 2]
-    })
+      iconAnchor: [animal.iconSize[0] / 2, animal.iconSize[1] / 2],
+    }),
   }).bindPopup(`<b>${animal.name}</b>`);
-
   detailedMarkers.push(marker);
   marker.addTo(map);
-}
+};
 
-function toggleMarkers() {
+const toggleMarkers = () => {
   const zoom = map.getZoom();
   const showIconic = zoom < 3;
-
   iconicMarkers.forEach(marker => {
     const el = marker.getElement?.();
-    if (el) el.style.display = showIconic ? "block" : "none";
+    if (el) el.style.display = showIconic ? 'block' : 'none';
   });
-
   detailedMarkers.forEach(marker => {
     const el = marker.getElement?.();
-    if (el) el.style.display = showIconic ? "none" : "block";
+    if (el) el.style.display = showIconic ? 'none' : 'block';
   });
-}
-
+};
 map.on('zoomend', toggleMarkers);
 
+// --------------------------------------------------
+// Chat & Quiz Functions
+// --------------------------------------------------
 
-/**
- * Opens the chat popup for the specified animal and initializes the conversation.
- *
- * @param {string} animalName - The name of the animal to chat with.
- */
-function openChatPopup(animalName) {
-    const chatPopup = document.getElementById("chat-popup");
-    const title = document.getElementById("chat-title");
-    const chatContainer = document.getElementById("chat-container");
-    const chatForm = document.getElementById("chat-form");
-    
-    chatPopup.style.display = "block"; // Show chat popup
-    title.textContent = `Chat with ${animalName}`;
-    chatContainer.innerHTML = "";
-
-    // set up close button
-    document.getElementById("close-popup").onclick = closeChatPopup;
-
-    chatContainer.innerHTML += `<p><strong>${animalName}:</strong> Hello! Ask me anything.</p>`;
-
-    // Handle chat form submission
-    chatForm.onsubmit = function (event) {
-        event.preventDefault();
-        sendMessage(animalName);
-    };
-}
-
-/**
- * Sends the user's message to the AI and appends the AI's response.
- *
- * @param {string} animalName - The name of the animal to chat with.
- */
-async function sendMessage(animalName) {
-    const userInputField = document.querySelector("#chat-form input");
-    const userInput = userInputField.value.trim();
-    const chatContainer = document.getElementById("chat-container");
-
-    if (!userInput) {
-        chatContainer.innerHTML += `<p><strong>Error:</strong> Please enter a valid question.</p>`;
-        return;
-    }
-
-    // Append User Message
-    chatContainer.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
-
-    // Clear Input Field & Keep Focus
-    userInputField.value = "";
-    userInputField.focus();
-
-    // Fetch AI Response
-    try {
-        const aiResponse = await fetchOpenAIResponse(animalName, userInput);
-        chatContainer.innerHTML += `<p><strong>${animalName}:</strong> ${aiResponse}</p>`;
-    } catch (error) {
-        chatContainer.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
-    }
-
-    // Smooth Auto-Scroll to Latest Message
-    chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: "smooth" });
-}
-
-// Store conversation history
+// Global chat history object per animal.
 let chatHistory = {};
 
-/**
- * Fetches the AI response from the server-side proxy using conversation history.
- *
- * @param {string} animal - The name of the animal to chat with.
- * @param {string} userInput - The user's input message.
- * @returns {Promise<string>} - A promise that resolves to the AI's response.
- */
-async function fetchOpenAIResponse(animal, userInput) {
-    try {
-      // Prepare the conversation history (same as before)
-      if (!chatHistory[animal]) {
-        chatHistory[animal] = [
-          { 
-            role: "system", 
-            content: `You are a talking ${animal}, staying in character as an AI wildlife expert.
-                - Always acknowledge user responses before changing topics.
-                - Confirm any quiz responses before introducing new information.
-                - Keep quiz questions related to the current animal unless otherwise asked.
-                - If the user asks an unrelated question, switch back to normal conversation.
-                - Keep responses concise and engaging.
-                - Do NOT mention that you are an AI.
-            `
-          }
-        ];
-      }
-      chatHistory[animal].push({ role: "user", content: userInput });
+// Opens the chat popup for the given animal.
+const openChatPopup = animalName => {
+  const chatPopup = document.getElementById('chat-popup');
+  const title = document.getElementById('chat-title');
+  const chatContainer = document.getElementById('chat-container');
+  const chatForm = document.getElementById('chat-form');
+
+  chatPopup.style.display = 'block';
+  title.textContent = `Chat with ${animalName}`;
+  // Start with a welcoming message.
+  chatContainer.innerHTML = `<p><strong>${animalName}:</strong> Hello! Ask me anything.</p>`;
+  document.getElementById('close-popup').onclick = closeChatPopup;
   
-      // Send the request to your server-side proxy
-      const response = await fetch("http://localhost:3000/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "gpt-4",
-          messages: chatHistory[animal],
-          temperature: 0.7
-        })
-      });
+  chatForm.onsubmit = event => {
+    event.preventDefault();
+    sendMessage(animalName);
+  };
+};
+
+// Closes the chat popup.
+const closeChatPopup = () =>
+  (document.getElementById('chat-popup').style.display = 'none');
+
+// Removes any JSON block (e.g., markdown code fences) from a string.
+const removeJsonBlock = text =>
+  text.replace(/.*```json[\s\S]*?```/, '').trim();
+
+// parseQuizResponse – extracts a quiz JSON object, and validates required keys.
+const parseQuizResponse = text => {
+  // Remove empty or incomplete JSON fences explicitly
+  const hasCodeFence = /```json[\s\S]*?```/.test(text);
+  if (hasCodeFence) {
+    text = text.replace(/```json([\s\S]*?)```/, (_, jsonBlock) => jsonBlock.trim());
+  }
+
+  // Use robust regex to match JSON, even nested
+  const jsonMatch = text.match(/\{(?:[^{}]|(?:\{[^{}]*\}))*\}/);
   
-      const result = await response.json();
-  
-      if (!response.ok) {
-        throw new Error(result.error?.message || `API request failed with status ${response.status}`);
-      }
-  
-      const aiResponse = result.choices[0]?.message?.content || `I'm not sure how to respond to that.`;
-      chatHistory[animal].push({ role: "assistant", content: aiResponse });
-      return aiResponse;
-    } catch (error) {
-      console.error("Proxy API Call Error:", error);
-      return `Sorry, I couldn't generate a response right now.`;
+  if (!jsonMatch) {
+    console.warn('No valid JSON object found in the response.');
+    return null;
+  }
+
+  const jsonString = jsonMatch[0];
+  try {
+    const quizObj = JSON.parse(jsonString);
+
+    // Strict validation of required keys
+    const hasRequiredFields = quizObj &&
+      (typeof quizObj.id === 'number' || typeof quizObj.id === 'string') &&
+      typeof quizObj.question === 'string' &&
+      Array.isArray(quizObj.options) &&
+      quizObj.options.every(opt => typeof opt === 'string') &&
+      typeof quizObj.correctAnswer === 'string' &&
+      typeof quizObj.explanation === 'string';
+
+    if (hasRequiredFields) {
+      return quizObj;
+    } else {
+      console.warn('Quiz JSON object is missing required fields:', quizObj);
     }
-}
+  } catch (error) {
+    console.error('JSON parsing error:', error, 'JSON:', jsonString);
+  }
 
-/**
- * Closes the chat popup by hiding the chat container.
- */
-function closeChatPopup() {
-    document.getElementById("chat-popup").style.display = "none";
-}
+  return null;
+};
 
 
-// Expose functions to the global scope.
+// Saves quiz question/response data to localStorage under "quizResponses".
+const saveQuizData = quizData => {
+  // Ensure the quizData.id is always stored as a string.
+  const normalizedId = String(quizData.id);
+  quizData.id = normalizedId;
+
+  const storedQuizzes = JSON.parse(localStorage.getItem("quizResponses")) || [];
+  const existingIndex = storedQuizzes.findIndex(q => String(q.id) === normalizedId);
+  if (existingIndex >= 0) {
+    // Merge new data into the existing record.
+    storedQuizzes[existingIndex] = { ...storedQuizzes[existingIndex], ...quizData };
+  } else {
+    storedQuizzes.push(quizData);
+  }
+  localStorage.setItem("quizResponses", JSON.stringify(storedQuizzes));
+};
+
+// Displays the quiz UI (always using the parser output) alongside the chat.
+const displayQuiz = (quizQuestion, animalName) => {
+  const chatContainer = document.getElementById('chat-container');
+  let optionsHtml = '';
+  quizQuestion.options.forEach(option => {
+    optionsHtml += `<button onclick="handleQuizAnswer('${quizQuestion.id}', '${option}', '${quizQuestion.correctAnswer}', \`${quizQuestion.explanation}\`, '${animalName}')">${option}</button> `;
+  });
+  chatContainer.innerHTML += `
+    <div id="quiz-${quizQuestion.id}">
+      <p><strong>Quiz:</strong> ${quizQuestion.question}</p>
+      <p>${optionsHtml}</p>
+    </div>
+  `;
+};
+
+// Handles quiz answer responses.
+const handleQuizAnswer = (questionId, selectedOption, correctAnswer, explanation, animalName) => {
+  const quizDiv = document.getElementById(`quiz-${questionId}`);
+  const isCorrect = selectedOption === correctAnswer;
+
+  // Feedback only — no explanation here.
+  const feedback = isCorrect
+    ? '<p><strong>✅ Correct!</strong></p>'
+    : `<p><strong>❌ Incorrect.</strong></p>`;
+  quizDiv.innerHTML += feedback;
+
+  const quizResponseData = {
+    id: questionId,
+    userAnswer: selectedOption,
+    correctAnswer: correctAnswer,
+    result: isCorrect ? 'Correct' : 'Incorrect',
+    explanation: explanation,
+    answeredAt: Date.now(),
+  };
+  saveQuizData(quizResponseData);
+
+  if (!chatHistory[animalName]) chatHistory[animalName] = [];
+  chatHistory[animalName].push({
+    role: 'user',
+    content: `Answered quiz "${questionId}": Selected "${selectedOption}", which is ${isCorrect ? 'correct' : 'incorrect'}.`
+  });
+
+  // Reply includes explanation ONLY if incorrect.
+  const animalReply = isCorrect 
+    ? "Great job! Feel free to ask me anything else!" 
+    : `Good try! ${explanation}`;
+  
+  chatHistory[animalName].push({ role: 'assistant', content: animalReply });
+
+  // Show in chat
+  document.getElementById('chat-container').innerHTML += `<p><strong>${animalName}:</strong> ${animalReply}</p>`;
+};
+
+// Sends the user's message to the AI, displays the response, and (randomly or explicitly) inserts a quiz.
+const sendMessage = async animalName => {
+  const userInputField = document.querySelector('#chat-form input');
+  const userInput = userInputField.value.trim();
+  const chatContainer = document.getElementById('chat-container');
+
+  if (!userInput) {
+    chatContainer.innerHTML += `<p><strong>Error:</strong> Please enter a valid question.</p>`;
+    return;
+  }
+
+  // Append the user's message
+  chatContainer.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+  userInputField.value = '';
+  userInputField.focus();
+
+  try {
+    const aiResponse = await fetchOpenAIResponse(animalName, userInput);
+    const quizData = parseQuizResponse(aiResponse);
+
+    const userWantsQuiz = /quiz/i.test(userInput);
+    const quizProbability = userWantsQuiz ? 1.0 : 0.3;
+    const shouldShowQuiz = quizData && Math.random() < quizProbability;
+
+    // Only show the assistant's message if it isn't just a quiz lead-in
+    if (!shouldShowQuiz || !quizData) {
+      const cleanResponse = removeJsonBlock(aiResponse);
+      
+      // Prevent duplicate rendering
+      const lastMessage = chatContainer.lastElementChild?.textContent || '';
+      if (!lastMessage.includes(cleanResponse)) {
+        chatContainer.innerHTML += `<p><strong>${animalName}:</strong> ${cleanResponse}</p>`;
+      }
+    }
+
+    if (shouldShowQuiz) {
+      saveQuizData({ ...quizData, animal: animalName, timestamp: Date.now() });
+      displayQuiz(quizData, animalName);
+    }
+  } catch (error) {
+    chatContainer.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
+  }
+
+  chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+};
+
+
+// Fetches the AI response from your server-side proxy using conversation history.
+const fetchOpenAIResponse = async (animal, userInput) => {
+  try {
+    if (!chatHistory[animal]) {
+      chatHistory[animal] = [
+        {
+          role: 'system',
+          content: `You are a talking ${animal}, who stays in character at all times.
+            - Always acknowledge user responses briefly before moving forward.
+            - Confirm quiz responses clearly, without repeating full explanations.
+            - Keep quiz questions strictly related to ${animal}s.
+            - When including a quiz, ALWAYS include exactly one properly formatted JSON object within markdown fences (\`\`\`json ... \`\`\`). NEVER output empty or duplicated JSON fences.
+            - Your JSON object MUST include: "id", "question", "options", "correctAnswer", and "explanation".
+            - Do not repeat quiz explanations after the user answers; instead, briefly acknowledge correctness or incorrectness and move forward conversationally.
+            - Keep responses short, engaging, and friendly.
+            - Do NOT mention that you are an AI.`
+        }
+      ];
+    }
+    chatHistory[animal].push({ role: 'user', content: userInput });
+    const response = await fetch('http://localhost:3000/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: chatHistory[animal],
+        temperature: 0.7,
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error?.message || `API request failed with status ${response.status}`);
+    }
+    const aiResponse = result.choices[0]?.message?.content || "I'm not sure how to respond to that.";
+    chatHistory[animal].push({ role: 'assistant', content: aiResponse });
+    return aiResponse;
+  } catch (error) {
+    console.error('Proxy API Call Error:', error);
+    return "Sorry, I couldn't generate a response right now.";
+  }
+};
+
+// --------------------------------------------------
+// Auto-Start Chat / Quiz on DOM Ready
+// --------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  const chatContainer = document.getElementById('chat-container');
+  const startQuizBtn = document.getElementById('start-quiz-btn');
+
+  if (startQuizBtn && chatContainer) {
+    startQuizBtn.addEventListener('click', startQuiz);
+  } else if (document.getElementById('quiz-container')) {
+    // If on a dedicated quiz page, auto-start the quiz.
+    startQuiz();
+  }
+});
+
+// Expose functions globally.
 window.openChatPopup = openChatPopup;
+window.handleQuizAnswer = handleQuizAnswer;
 window.sendMessage = sendMessage;
 window.closeChatPopup = closeChatPopup;
-
-
