@@ -41,14 +41,20 @@ class HumanImpactZone {
     if (dist > this.radius) return;
     
     const intensity = 0.1;
-    if (this.type === "pollution" && entity.type !== "plant") {
-      entity.energy -= intensity * 5;
-    } else if (this.type === "deforestation" && entity.type === "plant") {
-      if (Math.random() < 0.2) entity.health = 0;
-    } else if (this.type === "conservation") {
-      if (entity.type === "plant") entity.health = Math.min(100, entity.health + 0.1);
-      else entity.energy = Math.min(100, entity.energy + 0.2);
-    }
+    if (this.type === "pollution") {
+      if (entity.type === "plant") {
+        entity.health -= intensity * 2;
+        entity.health = Math.max(0, entity.health);
+        entity.highlightColor = 'gray'; // damaged plant
+      } else {
+        entity.energy -= intensity * 5;
+        entity.energy = Math.max(0, entity.energy);
+        entity.highlightColor = 'red'; // stressed animal
+      }
+    
+      // Reset highlight after short time
+      setTimeout(() => { entity.highlightColor = null; }, 200);
+    }    
   }
 }
 
@@ -177,6 +183,12 @@ class Entity {
     } else {
       ctx.fillStyle = this.energy > 40 ? 'green' : 'red';
       ctx.fillRect(this.x, this.y - 10, this.energy / 4, 5);
+    }
+
+    if (this.highlightColor) {
+      ctx.strokeStyle = this.highlightColor;
+      ctx.lineWidth = 3;
+      ctx.stroke(); // stroke around shape
     }
   }
 }

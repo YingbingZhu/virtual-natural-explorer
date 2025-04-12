@@ -82,9 +82,12 @@ map.on('zoomend', toggleMarkers);
 
 // Global chat history object per animal.
 let chatHistory = {};
+// global tracker
+let lastMessageWasQuiz = false;
 
 // Opens the chat popup for the given animal.
 const openChatPopup = animalName => {
+  lastMessageWasQuiz = false;
   const chatPopup = document.getElementById('chat-popup');
   const title = document.getElementById('chat-title');
   const chatContainer = document.getElementById('chat-container');
@@ -112,44 +115,40 @@ const removeJsonBlock = text =>
 
 // parseQuizResponse – extracts a quiz JSON object, and validates required keys.
 const parseQuizResponse = text => {
-  // Remove empty or incomplete JSON fences explicitly
-  const hasCodeFence = /```json[\s\S]*?```/.test(text);
-  if (hasCodeFence) {
-    text = text.replace(/```json([\s\S]*?)```/, (_, jsonBlock) => jsonBlock.trim());
-  }
-
-  // Use robust regex to match JSON, even nested
-  const jsonMatch = text.match(/\{(?:[^{}]|(?:\{[^{}]*\}))*\}/);
-  
-  if (!jsonMatch) {
-    console.warn('No valid JSON object found in the response.');
+  // Match the JSON block only inside fenced markdown
+  const match = text.match(/```json\s*([\s\S]*?)\s*```/);
+  if (!match || !match[1]) {
+    console.warn('❗ No properly fenced JSON block found.');
     return null;
   }
 
-  const jsonString = jsonMatch[0];
+  const jsonString = match[1].trim();
+
   try {
+    console.log("🧪 Found JSON block:\n", jsonString);
     const quizObj = JSON.parse(jsonString);
 
-    // Strict validation of required keys
     const hasRequiredFields = quizObj &&
-      (typeof quizObj.id === 'number' || typeof quizObj.id === 'string') &&
+      (typeof quizObj.id === 'string' || typeof quizObj.id === 'number') &&
       typeof quizObj.question === 'string' &&
       Array.isArray(quizObj.options) &&
       quizObj.options.every(opt => typeof opt === 'string') &&
       typeof quizObj.correctAnswer === 'string' &&
       typeof quizObj.explanation === 'string';
 
-    if (hasRequiredFields) {
-      return quizObj;
-    } else {
-      console.warn('Quiz JSON object is missing required fields:', quizObj);
+    if (!hasRequiredFields) {
+      console.warn('❗ Quiz JSON missing required fields:', quizObj);
+      return null;
     }
-  } catch (error) {
-    console.error('JSON parsing error:', error, 'JSON:', jsonString);
-  }
 
-  return null;
+    return quizObj;
+  } catch (err) {
+    console.error('❗ JSON parse error:', err, '\nRaw JSON block:\n', jsonString);
+    return null;
+  }
 };
+
+
 
 
 // Saves quiz question/response data to localStorage under "quizResponses".
@@ -189,6 +188,12 @@ const handleQuizAnswer = (questionId, selectedOption, correctAnswer, explanation
   const quizDiv = document.getElementById(`quiz-${questionId}`);
   const isCorrect = selectedOption === correctAnswer;
 
+  if (isCorrect) {
+    setAffectionLevel(animalName, getAffectionLevel(animalName) + 5);
+  } else {
+    setAffectionLevel(animalName, getAffectionLevel(animalName) + 1);
+  }
+
   // Feedback only — no explanation here.
   const feedback = isCorrect
     ? '<p><strong>✅ Correct!</strong></p>'
@@ -222,6 +227,17 @@ const handleQuizAnswer = (questionId, selectedOption, correctAnswer, explanation
   document.getElementById('chat-container').innerHTML += `<p><strong>${animalName}:</strong> ${animalReply}</p>`;
 };
 
+function getAffectionLevel(animalName) {
+  const stored = JSON.parse(localStorage.getItem("animalAffection")) || {};
+  return stored[animalName] || 0;
+}
+
+function setAffectionLevel(animalName, value) {
+  const stored = JSON.parse(localStorage.getItem("animalAffection")) || {};
+  stored[animalName] = Math.min(100, value); // Cap at 100
+  localStorage.setItem("animalAffection", JSON.stringify(stored));
+}
+
 // Sends the user's message to the AI, displays the response, and (randomly or explicitly) inserts a quiz.
 const sendMessage = async animalName => {
   const userInputField = document.querySelector('#chat-form input');
@@ -235,38 +251,47 @@ const sendMessage = async animalName => {
 
   // Append the user's message
   chatContainer.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
+
+  // Affection +1 for every message
+  const currentAffection = getAffectionLevel(animalName);
+  setAffectionLevel(animalName, currentAffection + 1);
+
   userInputField.value = '';
   userInputField.focus();
 
   try {
     const aiResponse = await fetchOpenAIResponse(animalName, userInput);
+    console.log("🔥 Raw AI response:\n", aiResponse);
+
     const quizData = parseQuizResponse(aiResponse);
+    const userWantsQuiz = /quiz|test|question/i.test(userInput);
+    const shouldShowQuiz = quizData && (!lastMessageWasQuiz || userWantsQuiz);
 
-    const userWantsQuiz = /quiz/i.test(userInput);
-    const quizProbability = userWantsQuiz ? 1.0 : 0.3;
-    const shouldShowQuiz = quizData && Math.random() < quizProbability;
-
-    // Only show the assistant's message if it isn't just a quiz lead-in
-    if (!shouldShowQuiz || !quizData) {
-      const cleanResponse = removeJsonBlock(aiResponse);
-      
-      // Prevent duplicate rendering
+    // Show clean assistant response (if not only a quiz)
+    const cleanResponse = removeJsonBlock(aiResponse);
+    if (!quizData) {
       const lastMessage = chatContainer.lastElementChild?.textContent || '';
       if (!lastMessage.includes(cleanResponse)) {
         chatContainer.innerHTML += `<p><strong>${animalName}:</strong> ${cleanResponse}</p>`;
       }
     }
 
+    // Show the quiz (once)
     if (shouldShowQuiz) {
       saveQuizData({ ...quizData, animal: animalName, timestamp: Date.now() });
       displayQuiz(quizData, animalName);
+      lastMessageWasQuiz = true;
+    } else {
+      lastMessageWasQuiz = false;
     }
+
   } catch (error) {
     chatContainer.innerHTML += `<p><strong>Error:</strong> ${error.message}</p>`;
   }
 
   chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
 };
+
 
 
 // Fetches the AI response from your server-side proxy using conversation history.
@@ -277,13 +302,27 @@ const fetchOpenAIResponse = async (animal, userInput) => {
         {
           role: 'system',
           content: `You are a talking ${animal}, who stays in character at all times.
+            - NEVER send a quiz JSON unless the user clearly consents (e.g., by saying "yes", "sure", or "okay") after being asked.
+            - DO NOT include a quiz in your first or second message, even if the user says "hi" or "tell me something".
+            - You may OFFER a quiz with a 30% chance during conversation, phrased naturally (e.g., "Would you like a quiz about ${animal}s?").
+            - Only if the user explicitly agrees (e.g., "yes", "okay", "sure", "quiz please") should you respond with a quiz.
+            - When sending a quiz, reply with a brief intro sentence followed by EXACTLY one properly formatted JSON object within a markdown code block like this:
+
+              \`\`\`json
+              {
+                "id": "lion-001",
+                "question": "What is the average lifespan of a lion in the wild?",
+                "options": ["5-7 years", "10-14 years", "15-20 years", "25-30 years"],
+                "correctAnswer": "10-14 years",
+                "explanation": "In the wild, lions typically live around 10 to 14 years. In captivity, they can live longer."
+              }
+              \`\`\`
             - Always acknowledge user responses briefly before moving forward.
-            - Confirm quiz responses clearly, without repeating full explanations.
-            - Keep quiz questions strictly related to ${animal}s.
-            - When including a quiz, ALWAYS include exactly one properly formatted JSON object within markdown fences (\`\`\`json ... \`\`\`). NEVER output empty or duplicated JSON fences.
-            - Your JSON object MUST include: "id", "question", "options", "correctAnswer", and "explanation".
-            - Do not repeat quiz explanations after the user answers; instead, briefly acknowledge correctness or incorrectness and move forward conversationally.
-            - Keep responses short, engaging, and friendly.
+            - DO NOT send any commentary after the quiz block. Only the intro + quiz JSON.
+            - Confirm quiz answers clearly, without repeating full explanations.
+            - Keep quiz topics strictly related to ${animal}s.
+            - Do not send quizzes consecutively. Wait for user to ask again.
+            - Keep responses short, friendly, and conversational.
             - Do NOT mention that you are an AI.`
         }
       ];

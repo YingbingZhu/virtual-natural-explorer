@@ -27,6 +27,20 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Error loading animal data:", error);
             animalList.innerHTML = "<p>Error loading animal encyclopedia. Please try again later.</p>";
         });
+    
+    function getBadgeLabel(badge) {
+        switch (badge) {
+            case '🏆': return 'Expert';
+            case '📘': return 'Learner';
+            case '🌱': return 'Beginner';
+            default: return '';
+        }
+    }
+
+    function getAffectionLevel(animalName) {
+        const stored = JSON.parse(localStorage.getItem("animalAffection")) || {};
+        return stored[animalName] || 0;
+      }
 
     /**
      * Function to create and add animal cards
@@ -37,21 +51,67 @@ document.addEventListener("DOMContentLoaded", () => {
         const animalCard = document.createElement("div");
         animalCard.classList.add("animal-card");
         if (isIconic) {
-            animalCard.classList.add("iconic-animal"); // Highlight iconic animals
+            animalCard.classList.add("iconic-animal");
         }
-
+    
+        // Create a safe ID for quiz progress
+        const safeId = `progress-${animal.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}`;
+    
+        // Set up the card's HTML
         animalCard.innerHTML = `
             <img src="${animal.image}" alt="${animal.name}">
             <div class="animal-details">
                 <h3>${animal.name}</h3>
                 <p>${animal.message}</p>
                 <p><strong>Location:</strong> ${getRegionDescription(animal.coordinates)}</p>
+                <div class="animal-progress" id="${safeId}"></div>
             </div>
         `;
     
-
+        // 🎯 Always get the container
+        const progressContainer = animalCard.querySelector(`#${safeId}`);
+        if (!progressContainer) {
+            console.warn(`Missing progress container for ${animal.name}`);
+            return;
+        }
+    
+        // ✅ Insert quiz progress if available
+        const quizStats = JSON.parse(localStorage.getItem("quizResponses")) || [];
+        const animalStats = quizStats.filter(q => q.animal === animal.name);
+        if (animalStats.length > 0) {
+            const correct = animalStats.filter(q => q.result === "Correct").length;
+            const percent = Math.round((correct / animalStats.length) * 100);
+            const badge = percent >= 80 ? '🏆' : percent >= 50 ? '📘' : '🌱';
+    
+            progressContainer.innerHTML += `
+                <p><strong>🧠 Familiarity with ${animal.name}</strong></p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${percent}%;" aria-valuenow="${percent}"></div>
+                </div>
+                <p><small>${correct} correct / ${animalStats.length} total — ${badge} <em>${getBadgeLabel(badge)}</em></small></p>
+            `;
+        }
+    
+        // ✅ Always show affection
+        const affection = getAffectionLevel(animal.name);
+        const affectionLabel =
+            affection >= 80 ? '💖 Trusted Friend' :
+            affection >= 50 ? '😊 Familiar' :
+            affection > 0 ? '👋 Acquaintance' :
+            '🫥 Unfamiliar';
+    
+        progressContainer.innerHTML += `
+            <p><strong>💖 Relationship with ${animal.name}</strong></p>
+            <div class="progress-bar affection-bar">
+                <div class="progress-fill" style="width: ${affection}%;" aria-valuenow="${affection}"></div>
+            </div>
+            <p><small>${affection}% — ${affectionLabel}</small></p>
+        `;
+    
         animalList.appendChild(animalCard);
     }
+    
+    
 
     /**
      * Converts coordinates into a human-friendly description

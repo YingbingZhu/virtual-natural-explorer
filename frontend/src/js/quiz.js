@@ -1,6 +1,10 @@
 import '../css/styles.css';
 import '../css/quiz.css';
 
+
+let currentQuizSet = [];
+let previousCorrectByAnimal = {};
+
 // --------------------------------------------------
 // Utility Functions
 // --------------------------------------------------
@@ -110,15 +114,35 @@ const buildQuizHTML = (quizResponses) => {
 // --------------------------------------------------
 
 /**
+ * Returns a shuffled random sample of `count` items from the array.
+ * @param {Array} array - The full quiz pool.
+ * @param {number} count - Number of items to sample.
+ * @returns {Array}
+ */
+const getRandomSample = (array, count) => {
+    const shuffled = [...array].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, shuffled.length));
+};
+
+/**
  * Starts the quiz, using unlocked quiz questions from localStorage.
  */
 export const startQuiz = () => {
   resetQuizProgress();
   const container = document.getElementById("quiz-container");
-  const quizResponses = getQuizResponses();
+  const allQuizzes = getQuizResponses();
+  currentQuizSet = getRandomSample(allQuizzes, 5);
+  const quizResponses = currentQuizSet;
+
+  previousCorrectByAnimal = {};
+  currentQuizSet.forEach(q => {
+    if (q.animal && q.result === "Correct") {
+      previousCorrectByAnimal[q.animal] = (previousCorrectByAnimal[q.animal] || 0) + 1;
+    }
+  });
 
   // If no unlocked quiz questions exist, show a friendly message.
-  if (quizResponses.length === 0) {
+  if (currentQuizSet.length === 0) {
     container.innerHTML = `<p>Come and chat with animals to unlock more quiz questions!</p>`;
     return;
   }
@@ -132,33 +156,128 @@ export const startQuiz = () => {
  * @param {string} correctAnswer - The correct answer.
  */
 const checkAnswer = (button, correctAnswer) => {
-  if (button.disabled) return;
-
-  // Disable all buttons for this question.
-  const buttons = button.parentElement.querySelectorAll("button");
-  buttons.forEach(btn => {
-    btn.disabled = true;
-    if (btn.innerText === correctAnswer) {
-      btn.classList.add("correct");
-    } else if (btn === button) {
-      btn.classList.add("incorrect");
+    if (button.disabled) return;
+  
+    const buttons = button.parentElement.querySelectorAll("button");
+    buttons.forEach(btn => {
+      btn.disabled = true;
+      if (btn.innerText === correctAnswer) {
+        btn.classList.add("correct");
+      } else if (btn === button) {
+        btn.classList.add("incorrect");
+      }
+    });
+  
+    const isCorrect = button.innerText === correctAnswer;
+    if (isCorrect) correctAnswers++;
+    answeredQuestions++;
+  
+    document.getElementById("current-score").textContent = correctAnswers;
+  
+    // Identify the question object to save updated quiz result
+    const questionText = button.closest(".quiz-question")?.querySelector("p strong")?.innerText || "";
+    const quizResponses = getQuizResponses();
+    const quizObj = quizResponses.find(q => questionText.includes(q.question));
+  
+    if (quizObj) {
+      saveQuizData({
+        ...quizObj,
+        result: isCorrect ? "Correct" : "Incorrect",
+        userAnswer: button.innerText,
+        answeredAt: Date.now()
+      });
     }
-  });
+  
+    const quizCount = currentQuizSet.length;
+    if (answeredQuestions === quizCount) {
+        setTimeout(() => {
+            document.querySelector(".score-container").style.display = "block";
+            document.getElementById("final-score").textContent = correctAnswers;
+        
+            showFamiliarityGains();
+          }, 1000);
+    }
+  };
 
-  if (button.innerText === correctAnswer) correctAnswers++;
-  answeredQuestions++;
+  function showFamiliarityGains() {
+    const updated = getQuizResponses();
+    const newCorrectByAnimal = {};
+    const gainByAnimal = {};
+  
+    currentQuizSet.forEach(q => {
+      if (!q.animal) return;
+      const stored = updated.find(storedQ => storedQ.id === q.id);
+      if (stored?.result === "Correct") {
+        newCorrectByAnimal[q.animal] = (newCorrectByAnimal[q.animal] || 0) + 1;
+      }
+    });
+  
+    Object.keys(newCorrectByAnimal).forEach(animal => {
+      const before = previousCorrectByAnimal[animal] || 0;
+      const after = newCorrectByAnimal[animal];
+      const diff = after - before;
+      if (diff > 0) {
+        gainByAnimal[animal] = diff;
+      }
+    });
+  
+    const container = document.querySelector(".score-container");
+    const box = document.createElement("div");
+    box.classList.add("familiarity-gains");
+  
+    if (Object.keys(gainByAnimal).length > 0) {
+      let html = `<h4>🧠 Familiarity Gains</h4><ul>`;
+      Object.entries(gainByAnimal).forEach(([animal, count]) => {
+        html += `<li>You increased <strong>${count}</strong> more familiarity with <strong>${animal}</strong>.</li>`;
+      });
+      html += `</ul>`;
+      box.innerHTML = html;
+    } else {
+      // Fallback message when no gain
+      box.innerHTML = `
+        <h4>📘 No New Gains Yet</h4>
+        <p>Every try helps! Keep learning and chatting with the animals 🐾</p>
+      `;
+    }
 
-  document.getElementById("current-score").textContent = correctAnswers;
+    container.appendChild(box);
 
-  // Use the length of valid quiz responses (re-read from localStorage).
-  const quizCount = getQuizResponses().filter(q => Array.isArray(q.options)).length;
-  if (answeredQuestions === quizCount) {
-    setTimeout(() => {
-      document.querySelector(".score-container").style.display = "block";
-      document.getElementById("final-score").textContent = correctAnswers;
-    }, 1000);
+    const totalPossible = currentQuizSet.length;
+    if (Object.keys(gainByAnimal).length > 0 || correctAnswers === totalPossible) {
+    launchConfetti();
+    }
   }
-};
+
+  function launchConfetti() {
+    const duration = 2 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+  
+    function randomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+  
+    const interval = setInterval(function () {
+      const timeLeft = animationEnd - Date.now();
+  
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+  
+      const particleCount = 50 * (timeLeft / duration);
+  
+      confetti({
+        particleCount,
+        angle: randomInRange(55, 125),
+        spread: 70,
+        origin: { x: 0.5, y: 0.6 },
+        ...defaults
+      });
+    }, 250);
+  }
+  
+  
+  
 
 // --------------------------------------------------
 // Event Listener for Quiz Container
@@ -169,14 +288,13 @@ const checkAnswer = (button, correctAnswer) => {
  * @param {Event} e - The event object.
  */
 const handleQuizContainerClick = e => {
-  const container = e.currentTarget;
-  if (e.target.classList.contains("quiz-option")) {
-    checkAnswer(e.target, e.target.dataset.answer);
-  } else if (e.target.id === "retry-btn") {
-    container.removeEventListener("click", handleQuizContainerClick);
-    startQuiz();
-  }
-};
+    const container = e.currentTarget;
+    if (e.target.classList.contains("quiz-option")) {
+      checkAnswer(e.target, e.target.dataset.answer);
+    } else if (e.target.id === "retry-btn") {
+      startQuiz();
+    }
+  };
 
 // --------------------------------------------------
 // Auto-Start Quiz on DOM Ready
@@ -218,30 +336,3 @@ const saveQuizData = quizData => {
   localStorage.setItem("quizResponses", JSON.stringify(storedQuizzes));
 };
 
-// --------------------------------------------------
-// Expose Functions Globally
-// --------------------------------------------------
-window.openChatPopup = openChatPopup;
-window.handleQuizAnswer = (questionId, selectedOption, correctAnswer, explanation, animalName) => {
-  const quizDiv = document.getElementById(`quiz-${questionId}`);
-  const isCorrect = selectedOption === correctAnswer;
-  const feedback = isCorrect
-    ? '<p><strong>Correct!</strong></p>'
-    : `<p><strong>Incorrect.</strong> ${explanation}</p>`;
-  quizDiv.innerHTML += feedback;
-
-  const quizResponseData = {
-    id: questionId,
-    userAnswer: selectedOption,
-    correctAnswer: correctAnswer,
-    result: isCorrect ? 'Correct' : 'Incorrect',
-    explanation: explanation,
-    answeredAt: Date.now(),
-  };
-  saveQuizData(quizResponseData);
-
-  // Resume conversation naturally.
-  document.getElementById('chat-container').innerHTML += `<p><strong>${animalName}:</strong> Feel free to ask me anything!</p>`;
-};
-window.sendMessage = sendMessage;
-window.closeChatPopup = () => (document.getElementById('chat-popup').style.display = 'none');
