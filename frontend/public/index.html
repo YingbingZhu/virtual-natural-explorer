@@ -4,11 +4,26 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Wildlife Education</title>
+    <title>Virtual Natural Explorer</title>
 </head>
 <body>
     <!-- Navigation Bar -->
     <nav>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="index.html">
+                <img src="../images/logo.png" alt="Virtual Natural Explorer" class="logo" />
+            </a>
+            <span style="
+                font-size: 2rem;
+                font-weight: bold;
+                color: white;
+                background-color: #3b8e67;
+                padding: 6px 14px;
+                border-radius: 20px;
+                font-family: 'Segoe UI', sans-serif;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            ">Virtual Natural Explorer</span>
+        </div>
         <ul>
             <li><a href="index.html">🌍 Home</a></li>
             <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
@@ -19,8 +34,8 @@
     </nav>
 
     <header class="page-header">
-        <h1>🌍 World Map</h1>
-        <p>Click and Chat with the animals on the map!</p>
+        <h1>Meet the Animal Friends Around the World!</h1>
+        <p>Click on animals, chat with them, make friends, and unlock fun quizzes!</p>
     </header>
 
     <!-- Sections -->
@@ -33,16 +48,26 @@
     <!-- Chat Popup -->
     <div id="chat-popup">
         <div class="popup-content">
-            <div class="popup-header">
-                <h2 id="chat-title">Wildlife Chatbot</h2>
-                <button id="close-popup" onclick="closeChatPopup()">&times;</button>
-            </div>
-            <div id="chat-container"></div>
-            <form id="chat-form">
-                <input type="text" id="user-input" placeholder="Ask me something..." required>
-                <button type="submit">Send</button>
-            </form>
+          <div class="popup-header">
+            <h2 id="chat-title">Wildlife Chatbot</h2>
+            <button id="close-popup" onclick="closeChatPopup()" aria-label="Close chat popup">&times;</button>
+          </div>
+      
+          <div id="chat-container"></div>
+      
+          <form id="chat-form" autocomplete="off">
+            <input
+              type="text"
+              id="user-input"
+              placeholder="Ask me something..."
+              required
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Chat input"
+            />
+            <button type="submit">Send</button>
+          </form>
         </div>
-    </div>
+      </div>
 </body>
 </html>

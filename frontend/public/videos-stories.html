@@ -6,25 +6,42 @@
   <title>🎥 Videos & Stories - Wildlife Education</title>
 </head>
 <body>
-    <nav>
-        <ul>
-            <li><a href="index.html">🌍 Home</a></li>
-            <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
-            <li><a href="ecosystem.html">🌱 Ecosystems</a></li>
-            <li><a href="quiz.html">🐻 Quizzes</a></li>
-            <li><a href="videos-stories.html">🎥 Videos & Stories</a></li>
-        </ul>
-    </nav>
+  <nav>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="index.html">
+            <img src="../images/logo.png" alt="Virtual Natural Explorer" class="logo" />
+        </a>
+        <span style="
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            background-color: #3b8e67;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-family: 'Segoe UI', sans-serif;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        ">Virtual Natural Explorer</span>
+    </div>
+    <ul>
+        <li><a href="index.html">🌍 Home</a></li>
+        <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
+        <li><a href="ecosystem.html">🌱 Ecosystems</a></li>
+        <li><a href="quiz.html">🐻 Quizzes</a></li>
+        <li><a href="videos-stories.html">🎥 Videos & Stories</a></li>
+    </ul>
+  </nav>
 
   <header class="page-header">
-    <h1>🎥 Wildlife Videos & Stories</h1>
-    <p>Learn about ecosystems through animated videos and magical AI stories!</p>
+    <h1> Explore Wildlife Through Videos & Stories</h1>
+    <p>
+      Discover ecosystems with animated videos, spark your imagination with magical AI-generated stories featuring animal friends from around the world!
+    </p>
+  
+    <div class="tab-controls">
+      <button class="tab-btn active" data-tab="videos">📺 Videos</button>
+      <button class="tab-btn" data-tab="stories">📖 Tell a Story</button>
+    </div>
   </header>
-
-  <section class="tab-controls">
-    <button class="tab-btn active" data-tab="videos">📺 Videos</button>
-    <button class="tab-btn" data-tab="stories">📖 Tell a Story</button>
-  </section>
 
   <main>
     <section id="tab-videos" class="tab-content active">
@@ -71,8 +88,6 @@
             <a href="https://www.wwf.org.uk/where-we-work/antarctic" target="_blank">Explore Antarctic Wildlife</a>.
         </p>
     </div>
-
-      <!-- (Repeat other continents as needed) -->
     </section>
 
     <section id="tab-stories" class="tab-content">
@@ -94,7 +109,7 @@
         <label for="story-name">Your Character's Name:</label>
         <input id="story-name" placeholder="e.g., Lila" />
 
-        <button id="generate-story">✨ Tell Me a Story</button>
+        <button id="generate-story">✨ Create my own story</button>
 
         <div id="story-output" class="story-box"></div>
       </div>

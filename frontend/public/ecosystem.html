@@ -7,24 +7,57 @@
   <link rel="stylesheet" href="../css/styles.css">
   <link rel="stylesheet" href="../css/ecosystem.css">
 </head>
-<body>
+
+<!-- Floating AI Assistant -->
+<!-- Floating Chat Toggle Button with Animal Teacher -->
+<div id="floating-ai-agent">
+  <div id="chat-box" class="chat-box hidden">
+    <div class="chat-header"> Mr.Fox <span onclick="toggleChat()" class="chat-close">✖</span></div>
+    <div class="chat-body" id="chat-body">
+      <div class="msg bot">Hi! I'm Mr.Fox! I am here to help you <br>Ask me about simulation settings.</div>
+    </div>
+    <input type="text" id="chat-input" placeholder="Ask a question..." />
+  </div>
+
+  <div id="ai-avatar" onclick="toggleChat()">
+    <img src="../images/animal-teacher.png" alt="AI Teacher" />
+  </div>
+</div>
 
 <!-- Navigation Bar -->
 <nav>
+  <div style="display: flex; align-items: center; gap: 12px;">
+      <a href="index.html">
+          <img src="../images/logo.png" alt="Virtual Natural Explorer" class="logo" />
+      </a>
+      <span style="
+          font-size: 2rem;
+          font-weight: bold;
+          color: white;
+          background-color: #3b8e67;
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-family: 'Segoe UI', sans-serif;
+          box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+      ">Virtual Natural Explorer</span>
+  </div>
   <ul>
-    <li><a href="index.html">🌍 Home</a></li>
-    <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
-    <li><a href="ecosystem.html">🌱 Ecosystems</a></li>
-    <li><a href="quiz.html">🐻 Quizzes</a></li>
-    <li><a href="videos-stories.html">🎥 Videos & Stories</a></li>
+      <li><a href="index.html">🌍 Home</a></li>
+      <li><a href="encyclopedia.html">📚 Animal Encyclopedia</a></li>
+      <li><a href="ecosystem.html">🌱 Ecosystems</a></li>
+      <li><a href="quiz.html">🐻 Quizzes</a></li>
+      <li><a href="videos-stories.html">🎥 Videos & Stories</a></li>
   </ul>
 </nav>
 
 <!-- Page Header -->
 <header class="page-header">
-  <h1>🌱 Ecosystem Simulation</h1>
+  <h1>Ecosystem Simulation</h1>
   <p>
-    Explore how animals, plants, and humans interact in a dynamic ecosystem. Adjust human impact, weather, and simulation speed to see how changes affect the balance of nature.
+    Dive into a dynamic virtual ecosystem where animals, plants, and humans coexist in a delicate balance.
+  </p>
+  <p>
+    Adjust temperature, animal populations, weather, human impact, and simulation speed to observe how nature responds to your actions.
   </p>
 </header>
 

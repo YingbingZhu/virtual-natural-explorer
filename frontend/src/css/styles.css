@@ -41,3 +41,26 @@ p {
   line-height: var(--line-height);
   color: var(--paragraph-color);
 }
+
+.page-header {
+  text-align: center;
+  padding: 60px 20px 40px;
+  background: linear-gradient(to bottom right, #e6f4ea, #ffffff);
+  font-family: 'Segoe UI', sans-serif;
+  border-bottom: 2px solid #d4d4d4;
+}
+
+.page-header h1 {
+  font-size: 2.5rem;
+  color: #2d6a4f;
+  margin-bottom: 16px;
+  text-shadow: 1px 1px #c8e6c9;
+}
+
+.page-header p {
+  font-size: 1.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+

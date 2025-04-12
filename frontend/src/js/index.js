@@ -118,14 +118,12 @@ const parseQuizResponse = text => {
   // Match the JSON block only inside fenced markdown
   const match = text.match(/```json\s*([\s\S]*?)\s*```/);
   if (!match || !match[1]) {
-    console.warn('❗ No properly fenced JSON block found.');
     return null;
   }
 
   const jsonString = match[1].trim();
 
   try {
-    console.log("🧪 Found JSON block:\n", jsonString);
     const quizObj = JSON.parse(jsonString);
 
     const hasRequiredFields = quizObj &&
@@ -137,19 +135,16 @@ const parseQuizResponse = text => {
       typeof quizObj.explanation === 'string';
 
     if (!hasRequiredFields) {
-      console.warn('❗ Quiz JSON missing required fields:', quizObj);
+      console.warn('Quiz JSON missing required fields:', quizObj);
       return null;
     }
 
     return quizObj;
   } catch (err) {
-    console.error('❗ JSON parse error:', err, '\nRaw JSON block:\n', jsonString);
+    console.error('JSON parse error:', err, '\nRaw JSON block:\n', jsonString);
     return null;
   }
 };
-
-
-
 
 // Saves quiz question/response data to localStorage under "quizResponses".
 const saveQuizData = quizData => {

@@ -46,6 +46,42 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+app.post("/api/narrate", async (req, res) => {
+  const { text, voiceId } = req.body;
+
+  try {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId || process.env.ELEVENLABS_VOICE_ID}`, {
+      method: "POST",
+      headers: {
+        "xi-api-key": process.env.ELEVENLABS_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        text: text,
+        model_id: "eleven_monolingual_v1",
+        voice_settings: {
+          stability: 0.4,
+          similarity_boost: 0.9
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Narration API Error:", errorData);
+      return res.status(500).json({ error: errorData });
+    }
+
+    const audioBuffer = await response.arrayBuffer();
+    res.set("Content-Type", "audio/mpeg");
+    res.send(Buffer.from(audioBuffer));
+  } catch (err) {
+    console.error("Narration Server Error:", err);
+    res.status(500).json({ error: "Voice narration failed." });
+  }
+});
+
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
