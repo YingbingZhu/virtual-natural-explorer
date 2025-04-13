@@ -57,7 +57,7 @@ const createDetailedMarker = animal => {
       iconSize: animal.iconSize,
       iconAnchor: [animal.iconSize[0] / 2, animal.iconSize[1] / 2],
     }),
-  }).bindPopup(`<b>${animal.name}</b>`);
+  }).on('click', () => openChatPopup(animal.name));
   detailedMarkers.push(marker);
   marker.addTo(map);
 };

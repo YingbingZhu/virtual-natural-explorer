@@ -89,6 +89,36 @@
             },
             "detailed": [
             ]
+        },
+        {
+            "iconic": {
+              "name": "Jaguar",
+              "message": "The largest big cat in the Americas, revered for its strength and powerful bite, often found in the Amazon rainforest.",
+              "iconSize": [50, 50],
+              "image": "images/jaguar.png",
+              "coordinates": [-60, -10]
+            },
+            "detailed": []
+        },
+        {
+            "iconic": {
+              "name": "Penguin",
+              "message": "A flightless bird adapted to life in the frigid Antarctic, known for its waddling walk and social colonies.",
+              "iconSize": [50, 50],
+              "image": "images/penguin.png",
+              "coordinates": [0, -75]
+            },
+            "detailed": []
+        },
+        {
+            "iconic": {
+              "name": "Whale",
+              "message": "The gentle giant of the ocean, whales are known for their size, intelligence, and haunting songs that travel for miles underwater.",
+              "iconSize": [60, 60],
+              "image": "images/whale.png",
+              "coordinates": [-140, 0]
+            },
+            "detailed": []
         }
     ]
 }
