@@ -7,7 +7,7 @@ module.exports = {
   entry: {
     quiz: './src/js/quiz.js',
     ecosystem: './src/js/ecosystem.js',
-    encyclopedia: './src/js/encyclopedia.js',
+    logbook: './src/js/logbook.js',
     index: './src/js/index.js',
     'videos-stories': './src/js/videos-stories.js', 
   },
@@ -31,7 +31,7 @@ module.exports = {
   },
   plugins: [
     new Dotenv(),
-      ...['index', 'quiz', 'ecosystem', 'encyclopedia', 'videos-stories'].map(name => new HtmlWebpackPlugin({
+      ...['index', 'quiz', 'ecosystem', 'logbook', 'videos-stories'].map(name => new HtmlWebpackPlugin({
         filename: `${name}.html`,
         template: `./public/${name}.html`,
         chunks: [name],

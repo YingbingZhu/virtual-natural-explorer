@@ -1,8 +1,8 @@
 import '../css/styles.css';
-import '../css/encyclopedia.css';
+import '../css/logbook.css';
 
 /**
- * Initializes the animal encyclopedia once the DOM is fully loaded.
+ * Initializes the animal logbook once the DOM is fully loaded.
  */
 document.addEventListener("DOMContentLoaded", () => {
     const animalList = document.getElementById("animal-list");
@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(error => {
             console.error("Error loading animal data:", error);
-            animalList.innerHTML = "<p>Error loading animal encyclopedia. Please try again later.</p>";
+            animalList.innerHTML = "<p>Error loading animal logbook. Please try again later.</p>";
         });
     
     function getBadgeLabel(badge) {
