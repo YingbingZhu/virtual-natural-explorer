@@ -178,48 +178,61 @@ const displayQuiz = (quizQuestion, animalName) => {
   `;
 };
 
+const incorrectFeedbackShown = {};
 // Handles quiz answer responses.
 const handleQuizAnswer = (questionId, selectedOption, correctAnswer, explanation, animalName) => {
   const quizDiv = document.getElementById(`quiz-${questionId}`);
   const isCorrect = selectedOption === correctAnswer;
+  // Prevent repeated feedback for the same wrong answer
+  const feedbackClass = `feedback-${questionId}-${selectedOption.replace(/\s+/g, '-')}`;
+  if (!isCorrect && quizDiv.querySelector(`.${feedbackClass}`)) {
+    return; 
+  }
 
   if (isCorrect) {
     setAffectionLevel(animalName, getAffectionLevel(animalName) + 5);
+
+    // Disable all buttons
+    const buttons = quizDiv.querySelectorAll('button');
+    buttons.forEach(btn => btn.disabled = true);
+
+    quizDiv.innerHTML += `
+      <p class="${feedbackClass}"><strong>✅ Correct!</strong></p>
+      <p><em>Explanation:</em> ${explanation}</p>
+    `;
+
+    const animalReply = "Great job! Feel free to ask me anything else!";
+    chatHistory[animalName] = chatHistory[animalName] || [];
+    chatHistory[animalName].push({ role: 'user', content: `Answered quiz "${questionId}": Selected "${selectedOption}", which is correct.` });
+    chatHistory[animalName].push({ role: 'assistant', content: animalReply });
+
+    saveQuizData({
+      id: questionId,
+      userAnswer: selectedOption,
+      correctAnswer,
+      result: 'Correct',
+      explanation,
+      answeredAt: Date.now()
+    });
+
+    document.getElementById('chat-container').innerHTML += `<p><strong>${animalName}:</strong> ${animalReply}</p>`;
   } else {
     setAffectionLevel(animalName, getAffectionLevel(animalName) + 1);
-  }
-
-  // Feedback only — no explanation here.
-  const feedback = isCorrect
-    ? '<p><strong>✅ Correct!</strong></p>'
-    : `<p><strong>❌ Incorrect.</strong></p>`;
-  quizDiv.innerHTML += feedback;
-
-  const quizResponseData = {
-    id: questionId,
-    userAnswer: selectedOption,
-    correctAnswer: correctAnswer,
-    result: isCorrect ? 'Correct' : 'Incorrect',
-    explanation: explanation,
-    answeredAt: Date.now(),
-  };
-  saveQuizData(quizResponseData);
-
-  if (!chatHistory[animalName]) chatHistory[animalName] = [];
-  chatHistory[animalName].push({
-    role: 'user',
-    content: `Answered quiz "${questionId}": Selected "${selectedOption}", which is ${isCorrect ? 'correct' : 'incorrect'}.`
-  });
-
-  // Reply includes explanation ONLY if incorrect.
-  const animalReply = isCorrect 
-    ? "Great job! Feel free to ask me anything else!" 
-    : `Good try! ${explanation}`;
   
-  chatHistory[animalName].push({ role: 'assistant', content: animalReply });
-
-  // Show in chat
-  document.getElementById('chat-container').innerHTML += `<p><strong>${animalName}:</strong> ${animalReply}</p>`;
+    // Disable all buttons
+    const buttons = quizDiv.querySelectorAll('button');
+    buttons.forEach(btn => btn.disabled = true);
+  
+    if (!incorrectFeedbackShown[questionId]) {
+      quizDiv.innerHTML += `
+        <p class="${feedbackClass}"><strong>❌ Incorrect.</strong></p>
+        <p><em>The correct answer is:</em> <strong>${correctAnswer}</strong></p>
+        <p><em>Explanation:</em> ${explanation}</p>
+        <p><strong>${animalName}:</strong> That's okay! Let me know if you'd like to learn more.</p>
+      `;
+      incorrectFeedbackShown[questionId] = true;
+    }
+  }
 };
 
 function getAffectionLevel(animalName) {
