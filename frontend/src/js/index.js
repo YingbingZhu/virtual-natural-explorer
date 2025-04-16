@@ -1,6 +1,3 @@
-// --------------------------------------------------
-// Imports & CSS
-// --------------------------------------------------
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import '../css/styles.css';
@@ -10,9 +7,6 @@ import '../css/chat.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-// --------------------------------------------------
-// Map Initialization
-// --------------------------------------------------
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
@@ -27,7 +21,9 @@ L.tileLayer(`https://api.maptiler.com/maps/basic-v2/256/{z}/{x}/{y}.png?key=${pr
 const iconicMarkers = [];
 const detailedMarkers = [];
 
-// Load animal markers
+/**
+ * Fetch animal icons
+ */
 fetch('data/animals.json')
   .then(res => res.json())
   .then(data => {
@@ -38,6 +34,11 @@ fetch('data/animals.json')
     toggleMarkers();
   });
 
+/**
+ * Create an iconic marker for an animal.
+ * 
+ * @param {*} animal Animal data
+ */
 const createIconicMarker = animal => {
   const marker = L.marker([animal.coordinates[1], animal.coordinates[0]], {
     icon: L.icon({
@@ -50,6 +51,11 @@ const createIconicMarker = animal => {
   marker.addTo(map);
 };
 
+/**
+ * Create a detailed marker for an animal.
+ * 
+ * @param {*} animal Animal data
+ */
 const createDetailedMarker = animal => {
   const marker = L.marker([animal.coordinates[1], animal.coordinates[0]], {
     icon: L.icon({
@@ -62,6 +68,9 @@ const createDetailedMarker = animal => {
   marker.addTo(map);
 };
 
+/**
+ * Toggles the visibility of markers based on map zoom level.
+ */
 const toggleMarkers = () => {
   const zoom = map.getZoom();
   const showIconic = zoom < 3;
@@ -76,16 +85,17 @@ const toggleMarkers = () => {
 };
 map.on('zoomend', toggleMarkers);
 
-// --------------------------------------------------
-// Chat & Quiz Functions
-// --------------------------------------------------
+/* ==================  Chat and Quiz ========================
 
 // Global chat history object per animal.
 let chatHistory = {};
 // global tracker
 let lastMessageWasQuiz = false;
 
-// Opens the chat popup for the given animal.
+/**
+ * Opens the chat popup for a specific animal.
+ * @param {string} animalName - The name of the animal to chat with.
+ */
 const openChatPopup = animalName => {
   lastMessageWasQuiz = false;
   const chatPopup = document.getElementById('chat-popup');
@@ -179,7 +189,16 @@ const displayQuiz = (quizQuestion, animalName) => {
 };
 
 const incorrectFeedbackShown = {};
-// Handles quiz answer responses.
+
+/**
+ * Handles the quiz answer submitted by the user.
+ * 
+ * @param {string|number} questionId  id of question
+ * @param {string} selectedOption user selcted answer
+ * @param {string} correctAnswer correct answer
+ * @param {string} explanation quiz explantion
+ * @param {string} animalName animal name
+ */
 const handleQuizAnswer = (questionId, selectedOption, correctAnswer, explanation, animalName) => {
   const quizDiv = document.getElementById(`quiz-${questionId}`);
   const isCorrect = selectedOption === correctAnswer;
@@ -235,18 +254,36 @@ const handleQuizAnswer = (questionId, selectedOption, correctAnswer, explanation
   }
 };
 
+
+/**
+ * Retrieves the current affection level of the specified animal from localStorage.
+ * s
+ * @param {string} animalName  animal name
+ * @returns {number}  affection level
+ */
 function getAffectionLevel(animalName) {
   const stored = JSON.parse(localStorage.getItem("animalAffection")) || {};
   return stored[animalName] || 0;
 }
 
+/**
+ * Sets the affection level for a specified animal in localStorage.
+ * 
+ * @param {string} animalName  animal name
+ * @param {number} value  new affection
+ */
 function setAffectionLevel(animalName, value) {
   const stored = JSON.parse(localStorage.getItem("animalAffection")) || {};
   stored[animalName] = Math.min(100, value); // Cap at 100
   localStorage.setItem("animalAffection", JSON.stringify(stored));
 }
 
-// Sends the user's message to the AI, displays the response, and (randomly or explicitly) inserts a quiz.
+
+/**
+ * Sends the user's message to the AI, displays the response, and randomly inserts a quiz.
+ * @param {*} animalName  animal name
+ * @returns 
+ */
 const sendMessage = async animalName => {
   const userInputField = document.querySelector('#chat-form input');
   const userInput = userInputField.value.trim();
@@ -275,7 +312,7 @@ const sendMessage = async animalName => {
     const userWantsQuiz = /quiz|test|question/i.test(userInput);
     const shouldShowQuiz = quizData && (!lastMessageWasQuiz || userWantsQuiz);
 
-    // Show clean assistant response (if not only a quiz)
+    // Show clean assistant response 
     const cleanResponse = removeJsonBlock(aiResponse);
     if (!quizData) {
       const lastMessage = chatContainer.lastElementChild?.textContent || '';
@@ -284,7 +321,7 @@ const sendMessage = async animalName => {
       }
     }
 
-    // Show the quiz (once)
+    // Show the quiz 
     if (shouldShowQuiz) {
       saveQuizData({ ...quizData, animal: animalName, timestamp: Date.now() });
       displayQuiz(quizData, animalName);
@@ -302,7 +339,13 @@ const sendMessage = async animalName => {
 
 
 
-// Fetches the AI response from your server-side proxy using conversation history.
+/**
+ * Sends a request to the proxy to fetch the AI response 
+ * 
+ * @param {string} animal animal name
+ * @param {string} userInput input
+ * @returns  The AI response as a string.
+ */
 const fetchOpenAIResponse = async (animal, userInput) => {
   try {
     if (!chatHistory[animal]) {
@@ -358,22 +401,7 @@ const fetchOpenAIResponse = async (animal, userInput) => {
   }
 };
 
-// --------------------------------------------------
-// Auto-Start Chat / Quiz on DOM Ready
-// --------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-  const chatContainer = document.getElementById('chat-container');
-  const startQuizBtn = document.getElementById('start-quiz-btn');
-
-  if (startQuizBtn && chatContainer) {
-    startQuizBtn.addEventListener('click', startQuiz);
-  } else if (document.getElementById('quiz-container')) {
-    // If on a dedicated quiz page, auto-start the quiz.
-    startQuiz();
-  }
-});
-
-// Expose functions globally.
+// Expose functions globally
 window.openChatPopup = openChatPopup;
 window.handleQuizAnswer = handleQuizAnswer;
 window.sendMessage = sendMessage;
