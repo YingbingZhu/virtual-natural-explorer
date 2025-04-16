@@ -4,12 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interactive Ecosystem Simulation | Wildlife Wonders</title>
-  <link rel="stylesheet" href="../css/styles.css">
-  <link rel="stylesheet" href="../css/ecosystem.css">
 </head>
 
-<!-- Floating AI Assistant -->
-<!-- Floating Chat Toggle Button with Animal Teacher -->
+<!-- Animal Teacher -->
 <div id="floating-ai-agent">
   <div id="chat-box" class="chat-box hidden">
     <div class="chat-header"> Mr.Fox <span onclick="toggleChat()" class="chat-close">✖</span></div>
@@ -91,7 +88,6 @@
           </button>
         </div>
 
-
         <!-- Temperature -->
         <div class="control-group">
           <div class="label-with-tooltip">
@@ -101,11 +97,10 @@
             <div class="tooltip-container temp-tooltip">
               <span class="info-icon" tabindex="0">ℹ️</span>
               <div class="tooltip-content temp-fixed">
-                <p><strong>Below 0°C (❄️ Snow):</strong> Slow plant growth, animals lose energy fast.</p>
-                <p><strong>0–10°C:</strong> Lower reproduction rates, energy drain increases.</p>
-                <p><strong>10–20°C:</strong> Balanced growth, some rain benefits.</p>
-                <p><strong>20–30°C:</strong> Ideal for most life – peak growth and reproduction.</p>
-                <p><strong>30°C+ (🔥 Heatwave):</strong> Water loss, higher energy drain, reduced plant regrowth.</p>
+                <p><strong>Below 0°C (❄️ Snow):</strong> Very cold – plant growth slows dramatically and animals lose energy rapidly.</p>
+                <p><strong>0–15°C:</strong> Cool conditions – moderate energy drain and lower reproduction rates.</p>
+                <p><strong>15–30°C:</strong> Ideal conditions – optimal growth and reproduction with minimal energy drain.</p>
+                <p><strong>30°C+ (🔥 Heatwave):</strong> High temperatures cause water loss, increased energy drain, and reduced plant regrowth.</p>
               </div>
             </div>
           </div>
@@ -212,7 +207,7 @@
         <h2 class="section-title">Your Ecosystem</h2>
         <canvas id="ecosystemCanvas" aria-label="Interactive ecosystem simulation canvas"></canvas>
         <div id="eco-status" class="status-bar">
-          Wolves: 0, Sheep: 0, Grass: 0, Human Impact: 0%
+          Wolves: 0, Sheep: 0, Grass: 0, Temperature: 20°
         </div>
       </div>
     </section>

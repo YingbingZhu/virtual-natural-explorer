@@ -1,10 +1,22 @@
 import '../css/styles.css';
 import '../css/ecosystem.css';
 
-/* --------------------------- */
-/* HUMAN IMPACT ZONE CLASS     */
-/* --------------------------- */
+/**
+ * Represents a human impact zone in the simulation.
+ * The zone will affect entities.
+ * 
+ * @class HumanImpactZone
+ */
 class HumanImpactZone {
+  
+  /**
+   * Creates a new impact zone.
+   * 
+   * @param {number} x - x coordinate of the zone center.
+   * @param {number} y - y coordinate of the zone center.
+   * @param {'pollution' | 'deforestation' | 'conservation'} type - human activity type
+   * @param {number} [radius=60] - radius of zone
+   */
   constructor(x, y, type, radius = 60) {
     this.x = x;
     this.y = y;
@@ -12,6 +24,11 @@ class HumanImpactZone {
     this.radius = radius;
   }
 
+  /**
+   * Draws the impact zone on canvas.
+   * 
+   * @param {*} ctx  canvas context.
+   */
   draw(ctx) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
@@ -35,60 +52,94 @@ class HumanImpactZone {
     ctx.fillText(emoji, this.x, this.y);
   }
 
+  /**
+   * Applies effect to entities.
+   * 
+   * @param {Object} entity the entity.
+   * @returns 
+   */
   affectEntity(entity) {
     const dist = Math.hypot(this.x - entity.x, this.y - entity.y);
     if (dist > this.radius) return;
 
     const now = Date.now();
-    const intensity = 0.5;
+    // intensity ratio set to 1 to make effects more visible
+    const intensity = 1;
 
     if (!entity.activeEffects) entity.activeEffects = new Set();
 
+    let affected = false;
+
     switch (this.type) {
       case "pollution":
-        this.applyPollution(entity, intensity);
+        affected = this.applyPollution(entity, intensity);
         break;
       case "deforestation":
-        this.applyDeforestation(entity, intensity);
+        affected = this.applyDeforestation(entity, intensity);
         break;
       case "conservation":
-        this.applyConservation(entity, intensity);
+        affected = this.applyConservation(entity, intensity);
         break;
     }
-
-    entity.highlightUntil = now + 200;
-    this.setHighlightColor(entity);
+  
+    if (affected) {
+      entity.highlightUntil = Date.now() + 200;
+      this.setHighlightColor(entity);
+    }
   }
 
+  /**
+   * Affects both animals and plants.
+   * Based on findings from Usman et al. (2023), animals are more sensitive to pollution
+   * 
+   * @param {*} entity the affected entity
+   * @param {*} intensity the intensity set in class
+   */
   applyPollution(entity, intensity) {
     entity.activeEffects.add("pollution");
     if (entity.type === "plant") {
-      entity.health = Math.max(0, entity.health - intensity * 1.5);
+      entity.health = Math.max(0, entity.health - intensity * 2);
     } else {
       entity.energy = Math.max(0, entity.energy - intensity * 5);
     }
-    console.log(`${entity.type} health before: ${entity.health}`);
+    return true;
   }
 
+  /**
+   * Only directly affects plants
+   * 
+   * @param {*} entity the affected entity
+   * @param {*} intensity the intensity set in class
+   */
   applyDeforestation(entity, intensity) {
+    if (entity.type !== 'plant') return false;
     entity.activeEffects.add("deforestation");
-    if (entity.type === "plant") {
-      entity.health = Math.max(0, entity.health - intensity * 3);
-    } else {
-      entity.energy = Math.max(0, entity.energy - intensity * 2);
-    }
-    console.log(`${entity.type} health before: ${entity.health}`);
+    entity.health = Math.max(0, entity.health - intensity * 5);
+    return true;
   }
 
+  /**
+   * Affects both plants and animals, use research result from Langhammer et al. (2024) 
+   * Animal recovery is quicker.
+   * 
+   * @param {*} entity the affected entity
+   * @param {*} intensity the intensity set in class
+   */
   applyConservation(entity, intensity) {
     entity.activeEffects.add("conservation");
     if (entity.type === "plant") {
-      entity.health = Math.min(100, entity.health + intensity);
+      entity.health = Math.min(50, entity.health + intensity);
     } else {
-      entity.energy = Math.min(100, entity.energy + intensity * 2);
+      entity.energy = Math.min(50, entity.energy + intensity * 1.24);
     }
+    return true;
   }
 
+  /**
+   * Sets the highlight color for the affected entity
+   *
+   * @param {Object} entity - the affected entity
+   */
   setHighlightColor(entity) {
     const effects = entity.activeEffects;
     if (effects.has("conservation") && (effects.has("pollution") || effects.has("deforestation"))) {
@@ -104,100 +155,146 @@ class HumanImpactZone {
 export default HumanImpactZone;
 
 
-/* --------------------------- */
-/* ENTITY CLASS                */
-/* --------------------------- */
+/**
+ * Represents an Entity in the simulation.
+ * 
+ * @class Entity
+ */
 class Entity {
-  constructor(x, y, type, emoji) {
+  /**
+   * Creates an entity.
+   * 
+   * @param {number} x - The x-coordinate.
+   * @param {number} y - The y-coordinate.
+   * @param {string} type - The entity type
+   * @param {string} emoji - The entity emoji 
+   * @param {Simulation} sim - The simulation instance 
+   */
+  constructor(x, y, type, emoji, sim) {
     this.x = x;
     this.y = y;
     this.type = type;
     this.emoji = emoji;
-    this.energy = type === 'plant' ? 0 : 50 + Math.random() * 50;
-    this.health = type === 'plant' ? 100 : 0;
-    this.growthTimer = 0; // For plant regrowth
-    // Set speed and default vision (for animals)
+    this.sim = sim;
+    this.energy = type !== 'plant' ? sim.settings.animalInitialEnergy : 0;
+    this.health = type === 'plant' ? sim.settings.plantInitialHealth : 0;
+    // plant regrowth rate
+    this.growthTimer = 0; 
+    // animal reproduction cooldown
+    this.reproduceCooldown = 0;
+    // Set speed for animals
     if (type === 'predator') {
-      this.speed = 1.5;
-      this.vision = 1.0;
-    } else if (type === 'prey') {
-      this.speed = 1.5 + Math.random() * 0.5;
-      this.vision = 1.0;
-    } else {
+      this.speed = sim.settings.wolfBaseSpeed + Math.random() * sim.settings.wolfSpeedVariance;
+    } else if (type === 'prey') { 
+      this.speed = sim.settings.sheepBaseSpeed + Math.random() * sim.settings.sheepSpeedVariance;
+    } else { // plant is fixed
       this.speed = 0;
     }
+    // active effects from human impact zones
+    this.activeEffects = new Set();
+    this.highlightColor = null;
+    this.highlightUntil = 0;
   }
 
-  // Plants regrow after dying
-  updateGrass(sim) {
+  /**
+   * Handles the plant logic.
+   */
+  updateGrass() {
     if (this.health <= 0) {
       this.growthTimer++;
-      if (this.growthTimer > sim.settings.grassRegrowTime) {
-        this.health = 100;
+      if (this.growthTimer > this.sim.settings.grassRegrowTime) {
+        this.health = this.sim.settings.plantInitialHealth;
         this.growthTimer = 0;
       }
     }
   }
 
-  preyLogic(sim) {
+  /**
+   * Handles the prey logic. Prey will move towards grass and run from predator
+   */
+  preyLogic() {
     let nearestGrass = null;
     let minDist = Infinity;
   
-    // Find nearest healthy grass within range
-    sim.entities.forEach(e => {
+    // Find nearest grass within range
+    this.sim.entities.forEach(e => {
       if (e.type === 'plant' && e.health > 0) {
         const d = Math.hypot(this.x - e.x, this.y - e.y);
-        if (d < sim.preyPlantRange && d < minDist) {
+        if (d < this.sim.preyPlantRange && d < minDist) {
           minDist = d;
           nearestGrass = e;
         }
       }
     });
-  
-    if (nearestGrass) {
-      // Move toward grass
+
+    // Look for the nearest predator 
+    let nearestPredator = null;
+    let predatorDist = Infinity;
+    this.sim.entities.forEach(e => {
+      if (e.type === 'predator') {
+        const d = Math.hypot(this.x - e.x, this.y - e.y);
+        if (d < predatorDist) {
+          predatorDist = d;
+          nearestPredator = e;
+        }
+      }
+    });
+
+    // If a predator is too close, run away from it.
+    const fearRange = this.sim.settings.sheepFearRange || 100;
+    if (nearestPredator && predatorDist < fearRange) {
+      const dx = this.x - nearestPredator.x;
+      const dy = this.y - nearestPredator.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      // Optionally, sheep can run faster than their normal speed when fleeing.
+      const fleeSpeedMultiplier = 1.2;
+      this.x += (dx / dist) * this.speed * fleeSpeedMultiplier;
+      this.y += (dy / dist) * this.speed * fleeSpeedMultiplier;
+    } else if (nearestGrass) {
+      // Move toward the grass if no predator is too close
       const dx = nearestGrass.x - this.x;
       const dy = nearestGrass.y - this.y;
       const dist = Math.hypot(dx, dy) || 1;
       this.x += (dx / dist) * this.speed;
       this.y += (dy / dist) * this.speed;
     } else {
-      // Wander if no grass in range
+      // Wander if no grass found and no predator nearby
       this.x += (Math.random() - 0.5) * this.speed;
       this.y += (Math.random() - 0.5) * this.speed;
     }
   
     // Eat grass if close enough
-    if (nearestGrass && minDist < 15) {
-      const grazeAmount = 5; 
-      const energyGain = sim.settings.sheepGainFromFood / 4; 
+    if (nearestGrass && minDist < this.sim.settings.sheepEatRange) {
+      const grazeAmount = this.sim.settings.sheepGrazeAmount; 
+      const energyGain = this.sim.settings.sheepGainFromFood; 
     
       nearestGrass.health = Math.max(0, nearestGrass.health - grazeAmount);
-      this.energy = Math.min(100, this.energy + energyGain);
-    
-      sim.updateInfo("Sheep is grazing...");
+      this.energy = Math.min(this.sim.settings.animalInitialEnergy, this.energy + energyGain);
     
       if (nearestGrass.health === 0) {
-        sim.updateInfo("Sheep finished a grass patch!");
+        this.sim.updateInfo("Sheep ate a grass patch!");
       }
     }
   
-    this.energy -= 1;
+    this.energy -= 0.5;
   
     // Reproduce if enough energy
-    if (this.energy > 30 && Math.random() < sim.settings.sheepReproduceProb) {
-      sim.entities.push(new Entity(this.x + 10, this.y + 10, 'prey', this.emoji));
+    if (this.energy > this.sim.settings.sheepReproduceThreshold &&
+      Math.random() < this.sim.settings.sheepReproduceProb) {
+      this.sim.entities.push(new Entity(this.x + 10, this.y + 10, 'prey', this.emoji, this.sim));
       this.energy /= 2;
-      sim.updateInfo("A sheep was born!");
+      this.sim.updateInfo("A sheep was born!");
     }
   }
   
-
-  predatorLogic(sim) {
+  /**
+   * Handles predator logics
+   */
+  predatorLogic() {
     // Find closest prey
     let target = null;
     let minDist = Infinity;
-    sim.entities.forEach(e => {
+    this.sim.entities.forEach(e => {
       if (e.type === 'prey') {
         const d = Math.hypot(this.x - e.x, this.y - e.y);
         if (d < minDist) {
@@ -214,10 +311,11 @@ class Entity {
       this.x += (dx / dist) * this.speed;
       this.y += (dy / dist) * this.speed;
       
-      if (minDist < 10) {
-        sim.entities = sim.entities.filter(e => e !== target);
-        this.energy += sim.settings.wolfGainFromFood;
-        sim.updateInfo("A wolf ate a sheep!");
+      if (minDist < this.sim.settings.wolfAttackRange) {
+        // eat the target
+        this.sim.entities = this.sim.entities.filter(e => e !== target);
+        this.energy += this.sim.settings.wolfGainFromFood;
+        this.sim.updateInfo("A wolf ate a sheep!");
       }
     } else {
       // Wander if no prey found
@@ -225,51 +323,60 @@ class Entity {
       this.y += (Math.random() - 0.5) * this.speed;
     }
     
-    this.energy -= 1.5;
-    if (this.energy > 40 && Math.random() < sim.settings.wolfReproduceProb) {
-      sim.entities.push(new Entity(this.x + 10, this.y + 10, 'predator', this.emoji));
+    this.energy -= 0.5;
+    if (this.energy > this.sim.settings.wolfReproduceThreshold && Math.random() < this.sim.settings.wolfReproduceProb) {
+      this.sim.entities.push(new Entity(this.x + 10, this.y + 10, 'predator', this.emoji, this.sim));
       this.energy /= 2;
-      sim.updateInfo("A wolf was born!");
+      this.sim.updateInfo("A wolf was born!");
     }
   }
 
-  move(sim) {
+  /**
+   * Entity move
+   */
+  move() {
     if (this.type === 'plant') {
-      this.updateGrass(sim);
+      this.updateGrass();
     } else if (this.energy > 0) {
       if (this.type === 'prey') {
-        this.preyLogic(sim);
+        this.preyLogic();
       } else {
-        this.predatorLogic(sim);
+        this.predatorLogic();
       }
     }
     // Keep entity within canvas bounds
-    this.x = Math.max(0, Math.min(sim.canvas.width, this.x));
-    this.y = Math.max(0, Math.min(sim.canvas.height, this.y));
+    this.x = Math.max(0, Math.min(this.sim.canvas.width, this.x));
+    this.y = Math.max(0, Math.min(this.sim.canvas.height, this.y));
   }
 
+  /**
+   * Draw on canvas
+   * 
+   * @param {*} ctx  canvas context.
+   */
   draw(ctx) {
     ctx.font = '30px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.emoji, this.x, this.y);
   
-    // Draw health or energy bar under or above the emoji
+    // Draw health or energy bar under the emoji
     const barWidth = 25;
     const barHeight = 5;
     const barX = this.x - barWidth / 2;
+    const barY = this.y + 20;
   
     if (this.type === 'plant') {
-      const healthWidth = (this.health / 100) * barWidth;
-      ctx.fillStyle = this.health > 40 ? 'green' : 'red';
-      ctx.fillRect(barX, this.y + 20, healthWidth, barHeight);
+      const healthWidth = (this.health / this.sim.settings.plantInitialHealth) * barWidth;
+      ctx.fillStyle = this.health > this.sim.settings.plantInitialHealth / 2 ? 'green' : 'red';
+      ctx.fillRect(barX, barY, healthWidth, barHeight);
     } else {
-      const energyWidth = (this.energy / 100) * barWidth;
-      ctx.fillStyle = this.energy > 40 ? 'green' : 'red';
-      ctx.fillRect(barX, this.y - 25, energyWidth, barHeight);
+      const energyWidth = (this.energy / this.sim.settings.plantInitialHealth) * barWidth;
+      ctx.fillStyle = this.energy > this.sim.settings.animalInitialEnergy / 2 ? 'green' : 'red';
+      ctx.fillRect(barX, barY, energyWidth, barHeight);
     }
   
-    // Draw highlight if affected
+    // Draw highlight if affected by human activity
     if (this.highlightColor) {
       ctx.beginPath();
       ctx.strokeStyle = this.highlightColor;
@@ -280,9 +387,11 @@ class Entity {
   }  
 }
 
-/* --------------------------- */
-/* SIMULATION CLASS            */
-/* --------------------------- */
+/**
+ * Main class responsible for managing the ecosystem simulation.
+ * 
+ * @class Simulation
+ */
 class Simulation {
   constructor() {
     // Setup main simulation canvas
@@ -299,7 +408,7 @@ class Simulation {
     this.ctx = this.canvas.getContext("2d");
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-    // Setup population graph canvas (if available)
+    // Setup population graph canvas
     this.graphCanvas = document.getElementById('populationGraph');
     if (this.graphCanvas) {
       this.graphCtx = this.graphCanvas.getContext('2d');
@@ -309,68 +418,118 @@ class Simulation {
     
     // Simulation settings
     this.settings = {
-      sheepGainFromFood: 4,
+      animalInitialEnergy: 50,
+      // sheep related 
+      sheepEatRange: 15,
+      sheepGrazeAmount: 5,
+      sheepGainFromFood: 20,
+      sheepReproduceProb: 0.05,
+      sheepReproduceThreshold: 30,
+      sheepBaseSpeed: 1.5,
+      sheepSpeedVariance: 0.5,
+      sheepFearRange: 10,
+      // wolf
       wolfGainFromFood: 20,
-      sheepReproduceProb: 0.04,
       wolfReproduceProb: 0.05,
-      grassRegrowTime: 30
+      wolfReproduceThreshold: 40,
+      wolfSpeedVariance: 0.5,
+      wolfAttackRange: 30,
+      wolfBaseSpeed: 1.8,
+      // grass
+      grassRegrowTime: 30,
+      plantInitialHealth: 50,
     };
 
     // Simulation state variables
     this.entities = [];
-    this.weather = 'sunny'; // only "sunny" and "rainy" are allowed
+    // default states
+    this.weather = 'sunny'; 
     this.simulationRunning = false;
-    this.simulationDelay = 400; // update speed
+    this.simulationDelay = 400; 
     this.raindrops = [];
     this.snowflakes = [];
-    this.sun = null; // used when weather is sunny
     this.humanImpactZones = [];
-    this.populationHistory = [];
-    this.educationalMessages = [];
-
-    // Prey behavior settings
-    this.preyPlantRange = 300;
-    this.plantSeeking = 0.015;
-    this.evasionStrength = 0.05;
-    this.plantRegrowthChance = 0.7;
-
     this.drawingActivity = false;
     this.selectedActivityType = 'pollution';
-
-    // Temperature (in °C) drives baseline effects and background color.
+    this.populationHistory = [];
+    this.educationalMessages = [];
     this.temperature = 20;
-
-    this.tick = 0; // simulation tick counter
+    this.tick = 0; 
 
     // Initialize the simulation
     this.setup();
   }
 
-  getSimulationContext() {
-    return `
-    Simulation behavior rules:
-    - Sheep eat grass gradually (5 health per step), and gain ${this.settings.sheepGainFromFood} energy.
-    - Wolves gain ${this.settings.wolfGainFromFood} energy when they eat sheep.
-    - Grass regrows after ${this.settings.grassRegrowTime} ticks.
-    - Prey (sheep) detect plants within ${this.preyPlantRange} units.
-    - Sheep reproduce if energy > 30 with ${this.settings.sheepReproduceProb * 100}% chance.
-    - Wolves reproduce if energy > 40 with ${this.settings.wolfReproduceProb * 100}% chance.
-    - Pollution lowers plant health by 1.5×intensity and animal energy by 5×intensity.
-    - Deforestation lowers plant health by 3×intensity.
-    - Conservation heals plants and animals slowly.
-        `.trim();
-  }
+  /**
+   * Gets the currect simulation settings.
+   * s
+   * @returns simualtion context string
+   */
+/**
+ * Gets the current simulation settings and behavior rules.
+ * @returns {string} Simulation context string.
+ */
+getSimulationContext() {
+  return `
+  Simulation behavior rules:
+  - Animal initial energy: ${this.settings.animalInitialEnergy}.
+  
+  - Sheep:
+      * Detection & Grazing:
+          - Eat range: ${this.settings.sheepEatRange} units.
+          - Graze amount: ${this.settings.sheepGrazeAmount} (reduces plant health per bite).
+          - Energy gain from grazing: ${this.settings.sheepGainFromFood}.
+      * Movement:
+          - Base speed: ${this.settings.sheepBaseSpeed}.
+          - Speed variance: ${this.settings.sheepSpeedVariance}.
+          - Fear range (to detect predators): ${this.settings.sheepFearRange} units.
+      * Reproduction:
+          - Reproduction threshold: ${this.settings.sheepReproduceThreshold} energy.
+          - Reproduction probability: ${(this.settings.sheepReproduceProb * 100).toFixed(1)}%.
+  
+  - Wolves:
+      * Attack:
+          - Attack range: ${this.settings.wolfAttackRange} units.
+          - Energy gain from eating sheep: ${this.settings.wolfGainFromFood}.
+      * Movement:
+          - Base speed: ${this.settings.wolfBaseSpeed}.
+          - Speed variance: ${this.settings.wolfSpeedVariance}.
+      * Reproduction:
+          - Reproduction threshold: ${this.settings.wolfReproduceThreshold} energy.
+          - Reproduction probability: ${(this.settings.wolfReproduceProb * 100).toFixed(1)}%.
+  
+  - Grass:
+      * Regrowth time: ${this.settings.grassRegrowTime} ticks.
+      * Initial plant health: ${this.settings.plantInitialHealth}.
+      
+  - Temperature and Weather Effects:
+      * Temperature zones:
+          - "Freeze" (< 0°C): Plants lose 0.2 health per tick; Animals lose 0.5 energy per tick.
+          - "Chilly" (0°C to <15°C): Plants lose 0.1 health per tick.
+          - "Ideal" (15°C to <30°C): Plants gain 0.2 health per tick; Animals are unaffected.
+          - "Hot" (>= 30°C): Plants lose 1 health per tick; Animals lose 0.3 energy per tick.
+      * Weather:
+          - Rainy conditions give plants an extra 0.1 health per tick.
 
-  /* --------------------------- */
-  /* SETUP & RESET               */
-  /* --------------------------- */
+  - Environmental Effects:
+      * Pollution lowers plant health by 1.5× intensity and animal energy by 5× intensity.
+      * Deforestation lowers plant health by 3× intensity.
+      * Conservation slowly heals plants and animals.
+  `.trim();
+}
+
+  /**
+   * set up the simulation
+   */
   setup() {
     this.resetSimulation();
-    this.updatePreySettings();
     this.redrawCanvas();
     this.logInfo('Simulation setup complete.');
   }
 
+  /**
+   * reset simulation
+   */
   resetSimulation() {
     this.simulationRunning = false;
     this.entities = [];
@@ -381,47 +540,20 @@ class Simulation {
     this.educationalMessages = [];
     this.tick = 0;
     this.populationHistory = [];
-    if (this.ctx) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if (this.ctx) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.temperature = 20;
+      const bgColor = this.getTemperatureBackgroundColor(this.temperature);
+      this.ctx.fillStyle = bgColor;
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
     if (this.graphCtx) this.graphCtx.clearRect(0, 0, this.graphCanvas.width, this.graphCanvas.height);
     this.updateInfo('Reset! Start a new ecosystem!');
-    console.log('Simulation reset.');
   }
 
-  /* --------------------------- */
-  /* PARAMETER UPDATES           */
-  /* --------------------------- */
-  updatePreySettings() {
-    const preyRangeEl = document.getElementById('preyPlantRange');
-    const plantSeekingEl = document.getElementById('plantSeeking');
-    const evasionStrengthEl = document.getElementById('evasionStrength');
-    const plantRegrowthEl = document.getElementById('plantRegrowth');
-
-    if (preyRangeEl && plantSeekingEl && evasionStrengthEl && plantRegrowthEl) {
-      this.preyPlantRange = parseInt(preyRangeEl.value);
-      this.plantSeeking = parseFloat(plantSeekingEl.value);
-      this.evasionStrength = parseFloat(evasionStrengthEl.value);
-      this.plantRegrowthChance = parseInt(plantRegrowthEl.value) / 100;
-
-      document.getElementById('preyPlantRangeValue').textContent = this.preyPlantRange;
-      document.getElementById('plantSeekingValue').textContent = this.plantSeeking.toFixed(3);
-      document.getElementById('evasionStrengthValue').textContent = this.evasionStrength.toFixed(3);
-      document.getElementById('plantRegrowthValue').textContent = `${Math.round(this.plantRegrowthChance * 100)}%`;
-
-      this.updateInfo('Prey settings updated!');
-      console.log('Prey settings:', {
-        preyPlantRange: this.preyPlantRange,
-        plantSeeking: this.plantSeeking,
-        evasionStrength: this.evasionStrength,
-        plantRegrowthChance: this.plantRegrowthChance
-      });
-    } else {
-      this.preyPlantRange = 30;
-      this.plantSeeking = 0.015;
-      this.evasionStrength = 0.05;
-      this.plantRegrowthChance = 0.7;
-    }
-  }
-
+  /**
+   * update simulation speed
+   */
   updateSimulationSpeed() {
     const speedSlider = document.getElementById('simulationSpeed');
     const valueDisplay = document.getElementById('simulationSpeedValue');
@@ -436,9 +568,9 @@ class Simulation {
     }
   }
   
-  /* --------------------------- */
-  /* WEATHER & UI                */
-  /* --------------------------- */
+  /**
+   * handles weather change
+   */
   changeWeather() {
     // Weather is now set via a select control
     const select = document.getElementById('weather');
@@ -451,44 +583,49 @@ class Simulation {
     // Reset visual effects
     this.raindrops = [];
     this.snowflakes = [];
-    this.sun = null;
 
     if (this.weather === 'rainy') {
       this.raindrops = Array.from({ length: 50 }, () => ({
         x: Math.random() * this.canvas.width,
         y: Math.random() * this.canvas.height
       }));
-    } else if (this.weather === 'sunny') {
-      this.sun = { x: this.canvas.width - 70, y: 70, radius: 40 };
-    }
+    } 
     
     this.updateInfo(`Weather changed to ${this.weather}!`);
-    console.log('Weather:', this.weather);
     this.redrawCanvas();
   }
 
-  /* --------------------------- */
-  /* TEMPERATURE EFFECTS         */
-  /* --------------------------- */
-  // Returns a simple background color based on temperature using five groups.
+  /**
+   * Returns the background color give temperature.
+   * 
+   * @param {number} temp temperature
+   * @returns the color code
+   */
   getTemperatureBackgroundColor(temp) {
-    if (temp < 0) return "#a3d5f7";       // Freeze (cold blue)
-    if (temp < 10) return "#b4dcff";      // Chilly (light blue)
-    if (temp < 20) return "#e6f7ff";      // Mild (almost white-blue)
-    if (temp <= 30) return "#87ceeb";     // Ideal (blue)
-    return "#ff9966";                   // Hot (orange/red)
+    if (temp < 0) return "#a3d5f7";        // cold blue
+    if (temp < 15) return "#b4dcff";      // light blue
+    if (temp < 30) return "#87ceeb";     // blue
+    return "#ff9966";                   // orange/red
   }
 
-  // Returns a label for the temperature effect zone.
+  /**
+   * Returns the temperature group.
+   * 
+   * @param {number} temp temperature
+   * @returns temperature group
+   */
   getTemperatureEffectZone(temp) {
     if (temp < 0) return "freeze";
-    if (temp < 10) return "chilly";
-    if (temp < 20) return "mild";
-    if (temp <= 30) return "ideal";
+    if (temp < 15) return "chilly";
+    if (temp < 30) return "ideal";
     return "hot";
   }
 
-  // Applies both temperature and weather effects to an entity.
+  /**
+   * Applies both temperature and weather effects to an entity.
+   * 
+   * @param {*} entity the Entity
+   */
   applyTemperatureAndWeatherEffectsToEntity(entity) {
     const zone = this.getTemperatureEffectZone(this.temperature);
     // Effects on plants
@@ -496,33 +633,27 @@ class Simulation {
       switch (zone) {
         case 'freeze': entity.health -= 0.2; break;
         case 'chilly': entity.health -= 0.1; break;
-        case 'mild': entity.health += 0.05; break;
         case 'ideal': entity.health += 0.2; break;
-        case 'hot': if (Math.random() < 0.05) entity.health -= 1; break;
+        case 'hot': entity.health -= 1; break;
       }
-      if (this.weather === 'rainy' && (zone === 'mild' || zone === 'chilly')) {
-        entity.health += 0.1; // Rain benefit for plants in cool conditions
+      if (this.weather === 'rainy') {
+        entity.health += 0.1; // Rain benefit for plants 
       }
-      entity.health = Math.max(0, Math.min(100, entity.health));
+      entity.health = Math.max(0, Math.min(this.settings.plantInitialHealth, entity.health));
     }
     // Effects on animals
     if (entity.type === 'prey' || entity.type === 'predator') {
       switch (zone) {
         case 'freeze': entity.energy -= 0.5; break;
-        case 'chilly': entity.energy -= 0.3; break;
-        case 'mild': entity.energy -= 0.2; break;
-        case 'ideal': entity.energy -= 0.1; break;
         case 'hot': entity.energy -= 0.3; break;
-      }
-      // Rain reduces vision slightly
-      if (this.weather === 'rainy') {
-        entity.vision = entity.vision ? entity.vision * 0.9 : 0.9;
-      } else {
-        entity.vision = 1.0;
+        default: break;
       }
     }
   }
 
+  /**
+   * update temperatrue based on user setting
+   */
   updateTemperature() {
     const slider = document.getElementById("temperatureSlider");
     const temp = parseInt(slider.value, 10);
@@ -533,56 +664,20 @@ class Simulation {
     this.redrawCanvas();
   }
 
-  /* --------------------------- */
-  /* COLOR INTERPOLATION         */
-  /* --------------------------- */
-  // Interpolates between two colors (provided as hex strings) using the given factor (0-1)
-  interpolateColor(color1, color2, factor) {
-    const c1 = parseInt(color1.slice(1), 16);
-    const c2 = parseInt(color2.slice(1), 16);
-    const r1 = (c1 >> 16) & 0xff, g1 = (c1 >> 8) & 0xff, b1 = c1 & 0xff;
-    const r2 = (c2 >> 16) & 0xff, g2 = (c2 >> 8) & 0xff, b2 = c2 & 0xff;
-    const r = Math.round(r1 + (r2 - r1) * factor);
-    const g = Math.round(g1 + (g2 - g1) * factor);
-    const b = Math.round(b1 + (b2 - b1) * factor);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-
-  // Gets a background color for temperature using interpolation (if desired)
-  getOverlayColorFromTemp(temp) {
-    // This function is kept here if you want a smooth gradient instead of fixed groups.
-    if (temp <= 5) {
-      const factor = (temp + 30) / 35;
-      return this.interpolateColor("#0af", "#ff0", factor);
-    } else {
-      const factor = (temp - 5) / 35;
-      return this.interpolateColor("#ff0", "#f00", factor);
-    }
-  }
-
-  /* --------------------------- */
-  /* RENDERING & ENVIRONMENT     */
-  /* --------------------------- */
+  /**
+   * redraw canvas
+   */
   redrawCanvas() {
     if (!this.ctx) return;
     const ctx = this.ctx;
     ctx.save();
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.clearRect(0, 0, this.canvas.width / this.dpr, this.canvas.height / this.dpr);
-  
-    // --- Background based solely on temperature ---
+    // background color based on temprature
     const bgColor = this.getTemperatureBackgroundColor(this.temperature);
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-  
-    // --- Weather Visual Effects ---
-    if (this.sun) {
-      ctx.beginPath();
-      ctx.arc(this.sun.x, this.sun.y, this.sun.radius, 0, 2 * Math.PI);
-      ctx.fillStyle = "yellow";
-      ctx.fill();
-    }
-  
+
     // Display raindrops if rainy weather
     if (this.weather === 'rainy') {
       if (this.raindrops.length === 0) {
@@ -603,7 +698,7 @@ class Simulation {
       });
     }
   
-    // If temperature is below 0, trigger snow effect (independent of weather)
+    // If temperature is below 0, trigger snow effect
     if (this.temperature < 0) {
       if (this.snowflakes.length === 0) {
         this.snowflakes = Array.from({ length: 40 }, () => ({
@@ -629,7 +724,7 @@ class Simulation {
       this.snowflakes = [];
     }
   
-    // --- Draw Human Impact Zones and Entities ---
+    // Draw Human Impact Zones and Entities
     this.humanImpactZones.forEach(zone => zone.draw(ctx));
     this.entities.forEach(entity => entity.draw(ctx));
   
@@ -640,13 +735,11 @@ class Simulation {
     ctx.restore();
   }
   
-  /* --------------------------- */
-  /* SIMULATION LOOP (GO)        */
-  /* --------------------------- */
+  /**
+   * simulation loop
+   */
   simulate() {
     if (!this.simulationRunning) return;
-  
-    // Redraw the environment (which includes background and effects)
     this.redrawCanvas();
     
     // Apply temperature and weather effects to all entities
@@ -654,35 +747,40 @@ class Simulation {
       this.applyTemperatureAndWeatherEffectsToEntity(entity);
     });
   
-    // Rain can stimulate new plant growth
+    // Apply rain effect: boost grass growth
     if (this.weather === 'rainy' && Math.random() < 0.02) {
       this.entities.push(new Entity(
         Math.random() * this.canvas.width,
         Math.random() * this.canvas.height,
         'plant',
-        '🌿'
+        '🌿',
+        this
       ));
       this.updateInfo('Rain grew new plant!');
     }
-  
-    // 1. Move all entities
+    // move all entities
     this.entities.forEach(entity => {
-      entity.move(this);
+      entity.move();
     });
 
-    // 2. Apply human impact + animal interactions
-    this.interactEntities();
+    // Apply human impact + animal interactions
+    this.humanImpactZones.forEach(zone => {
+      this.entities.forEach(entity => zone.affectEntity(entity));
+    });
 
-    // 3. Draw updated entities
+    // Draw updated entities
     this.entities.forEach(entity => {
       entity.draw(this.ctx);
     });
+
+    // Remove dead entities
+    this.entities = this.entities.filter(e => e.energy > 0 || (e.type === 'plant' && e.health > 0));
   
     // Update ecosystem stats and graph
     const predators = this.entities.filter(e => e.type === 'predator').length;
     const prey = this.entities.filter(e => e.type === 'prey').length;
     const plants = this.entities.filter(e => e.type === 'plant' && e.health > 0).length;
-    this.updateStatus(predators, prey, plants);
+    this.updateStatus(predators, prey, plants, this.temperature);
   
     if (predators === 0 && prey === 0) {
       this.updateInfo('Ecosystem empty! Add more friends!');
@@ -700,83 +798,47 @@ class Simulation {
     setTimeout(() => this.simulate(), this.simulationDelay);
   }
   
-  updateStatus(predators, prey, plants) {
+  /**
+   * Updates the status info.
+   * 
+   * @param {*} predators number of predators
+   * @param {*} prey number of preys
+   * @param {*} plants number of plants
+   * @param {*} temperature temperatrue
+   */
+  updateStatus(predators, prey, plants, temperature) {
     const status = document.getElementById("eco-status");
     if (status) {
-      status.innerHTML = `Predators: ${predators}, Prey: ${prey}, Plant: ${plants}.`;
+      status.innerHTML = `Predators: ${predators}, Prey: ${prey}, Plant: ${plants}, temperature: ${temperature}°`;
     }
   }
   
-  interactEntities() {
-    // Apply human impact effects first
-    this.humanImpactZones.forEach(zone => {
-      this.entities.forEach(entity => zone.affectEntity(entity));
-    });
-  
-    // Handle interactions between entities
-    for (let i = 0; i < this.entities.length; i++) {
-      for (let j = i + 1; j < this.entities.length; j++) {
-        const e1 = this.entities[i];
-        const e2 = this.entities[j];
-        const distance = Math.hypot(e1.x - e2.x, e1.y - e2.y);
-  
-        // Predator eats prey
-        if (e1.type === 'predator' && e2.type === 'prey' && e2.energy > 0 && distance < 50) {
-          e1.energy = Math.min(100, e1.energy + 40);
-          this.entities.splice(j, 1);
-          this.updateInfo('A wolf ate a sheep! Yum!');
-          j--;
-        } else if (e2.type === 'predator' && e1.type === 'prey' && e1.energy > 0 && distance < 50) {
-          e2.energy = Math.min(100, e2.energy + 40);
-          this.entities.splice(i, 1);
-          this.updateInfo('A wolf ate a sheep! Yum!');
-          i--;
-          break;
-        }
-        // Prey eats plant
-        else if (e1.type === 'prey' && e2.type === 'plant' &&
-                 distance < this.preyPlantRange && e2.health > 0) {
-          e2.health -= 20;
-          e1.energy = Math.min(100, e1.energy + 15);
-          if (e2.health <= 0 &&
-             (this.weather === 'rainy' || Math.random() < this.plantRegrowthChance)) {
-            e2.health = 20;
-            this.updateInfo('Grass grew back!');
-          }
-          this.updateInfo('Prey ate grass!');
-          if (e1.energy > 80 && Math.random() < 0.03) {
-            this.entities.push(new Entity(e1.x + 20, e1.y + 20, 'prey', e1.emoji));
-            this.updateInfo('A baby prey was born!');
-          }
-        }
-      }
-    }
-    // Remove dead entities
-    this.entities = this.entities.filter(e => e.energy > 0 || (e.type === 'plant' && e.health > 0));
-    console.log('Entities after interaction:', this.entities.length);
-  }
-  
+  /**
+   * Starts the simulation
+   */
   startSimulation() {
     if (!this.simulationRunning) {
       if (this.entities.length === 0) {
-        this.updateInfo('Add animals and plants first!');
+        this.logInfo('Add animals and plants first!');
         return;
       }
       this.simulationRunning = true;
-      this.updateInfo('Simulation started!');
+      this.logInfo('Simulation started!');
       this.simulate(); 
     }
   }
-  
+
+  /**
+   * Stops the simulation
+   */
   stopSimulation() {
     this.simulationRunning = false;
-    this.updateInfo('Simulation stopped.');
-    console.log('Simulation stopped.');
+    this.logInfo('Simulation stopped.');
   }
   
-  /* --------------------------- */
-  /* POPULATION GRAPH            */
-  /* --------------------------- */
+  /**
+   * Updates the population graph.
+   */
   updateGraph() {
     if (!this.graphCtx || !this.populationHistory.length) return;
   
@@ -815,9 +877,11 @@ class Simulation {
     drawLine('green', 'plants');
   }
   
-  /* --------------------------- */
-  /* UI & LOGGING FUNCTIONS      */
-  /* --------------------------- */
+/**
+ * Updates the canvas information panel.
+ * 
+ * @param {string} text - the message
+ */
   updateInfo(text) {
     this.educationalMessages.push(text);
     if (this.educationalMessages.length > 3) {
@@ -835,14 +899,21 @@ class Simulation {
     } else {
       console.error('eco-info element not found!');
     }
-    console.log('Info:', text);
   }
   
+  /**
+   * logs the message and update info panel.
+   * 
+   * @param {string} text - The message to log.
+   */
   logInfo(text) {
     console.log(text);
     this.updateInfo(text);
   }
   
+  /**
+   * Add entities on canvas
+   */
   addEntity() {
     const select = document.getElementById('animalSelect');
     if (!select) return console.error('animalSelect not found!');
@@ -872,7 +943,7 @@ class Simulation {
     for (let i = 0; i < count; i++) {
       const x = Math.random() * this.canvas.width;
       const y = Math.random() * this.canvas.height;
-      this.entities.push(new Entity(x, y, type, emoji));
+      this.entities.push(new Entity(x, y, type, emoji, this));
     }
   
     const label = type === 'plant' ? 'grass patch' : value + (count > 1 ? 's' : '');
@@ -881,16 +952,15 @@ class Simulation {
   }
 }
 
-
-/* --------------------------- */
-/* UI CONTROL FUNCTIONS        */
-/* --------------------------- */
+/**
+ * Initializes UI control functions and event listeners after the DOM is fully loaded.
+ */
 document.addEventListener("DOMContentLoaded", () => {
   const simulation = new Simulation();
   window.simulation = simulation;
 
   // Expose simulation functions for UI controls
-  window.updatePreySettings = () => simulation.updatePreySettings();
+  // window.updatePreySettings = () => simulation.updatePreySettings();
   window.addEntity = () => simulation.addEntity();
   window.changeWeather = () => simulation.changeWeather();
   window.updateTemperature = () => simulation.updateTemperature();
@@ -938,9 +1008,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.updateActivityDescription = function () {
     const descriptions = {
-      pollution: "💨 <strong>Pollution Zone:</strong> A smoggy cloud that causes nearby animals to lose energy quickly.",
-      deforestation: "🪓 <strong>Deforestation Zone:</strong> Trees fall and grass struggles to grow, harming plants.",
-      conservation: "🌱 <strong>Conservation Zone:</strong> A safe haven where animals and plants regain strength."
+      pollution: "💨 <strong>Pollution Zone:</strong> This area is overwhelmed by smog and toxic emissions. Both Animal friends and plants are affected, expecially animals.",
+      deforestation: "🪓 <strong>Deforestation Zone:</strong> In this zone, excessive tree cutting diminish plant regrowth. It will also affect our herbivores friends",
+      conservation: "🌱 <strong>Conservation Zone:</strong> This is a protected area where recovery efforts help animals regain energy and plants slowly restore their health. "
     };
     const select = document.getElementById("activityType");
     const descEl = document.getElementById("activityDescription");
@@ -952,12 +1022,17 @@ document.addEventListener("DOMContentLoaded", () => {
   simulation.redrawCanvas();
 });
 
-
+/**
+ * toggle the chat box
+ */
 function toggleChat() {
   const chatBox = document.getElementById("chat-box");
   chatBox.classList.toggle("hidden");
 }
 
+/**
+ * Handles the keypress event on the chat input field.
+ */
 document.getElementById("chat-input").addEventListener("keypress", async (e) => {
   if (e.key !== "Enter") return;
 
@@ -1011,6 +1086,5 @@ document.getElementById("chat-input").addEventListener("keypress", async (e) => 
     botMsg.textContent = "Oops! Something went wrong.";
   }
 });
-
 
 window.toggleChat = toggleChat;
