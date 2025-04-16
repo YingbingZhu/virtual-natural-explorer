@@ -5,13 +5,11 @@ import '../css/quiz.css';
 let currentQuizSet = [];
 let previousCorrectByAnimal = {};
 
-// --------------------------------------------------
-// Utility Functions
-// --------------------------------------------------
 
 /**
  * Decodes HTML entities from a string.
- * @param {string} html - The HTML string.
+ * 
+ * @param {string} html html string
  * @returns {string} - The decoded text.
  */
 const decodeHTML = html => {
@@ -26,9 +24,6 @@ const decodeHTML = html => {
  */
 const getQuizResponses = () => JSON.parse(localStorage.getItem("quizResponses")) || [];
 
-// --------------------------------------------------
-// Quiz Progress Tracking
-// --------------------------------------------------
 let answeredQuestions = 0;
 let correctAnswers = 0;
 
@@ -37,13 +32,9 @@ const resetQuizProgress = () => {
   correctAnswers = 0;
 };
 
-// --------------------------------------------------
-// Quiz HTML Builders
-// --------------------------------------------------
-
 /**
  * Generates the HTML for a single quiz question.
- * Filters out questions that do not have a valid options array.
+ * 
  * @param {Object} q - The quiz question object.
  * @param {number} index - The question index.
  * @returns {string} - The HTML string for the quiz question.
@@ -79,6 +70,7 @@ const createQuizQuestionHTML = (q, index) => {
 
 /**
  * Builds the complete quiz HTML interface from valid quiz responses.
+ * 
  * @param {Array} quizResponses - Array of unlocked quiz questions.
  * @returns {string} - The complete quiz HTML.
  */
@@ -109,12 +101,10 @@ const buildQuizHTML = (quizResponses) => {
   return html;
 };
 
-// --------------------------------------------------
-// Quiz Functionalities
-// --------------------------------------------------
 
 /**
  * Returns a shuffled random sample of `count` items from the array.
+ * 
  * @param {Array} array - The full quiz pool.
  * @param {number} count - Number of items to sample.
  * @returns {Array}
@@ -278,13 +268,9 @@ const checkAnswer = (button, correctAnswer) => {
   
   
   
-
-// --------------------------------------------------
-// Event Listener for Quiz Container
-// --------------------------------------------------
-
 /**
  * Delegated event handler for quiz container clicks.
+ * 
  * @param {Event} e - The event object.
  */
 const handleQuizContainerClick = e => {
@@ -296,10 +282,9 @@ const handleQuizContainerClick = e => {
     }
   };
 
-// --------------------------------------------------
-// Auto-Start Quiz on DOM Ready
-// --------------------------------------------------
-
+/**
+ * start quiz
+ */
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("quiz-container");
   const startBtn = document.getElementById("start-quiz-btn");
@@ -315,13 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --------------------------------------------------
-// Data Management: Merged Save Function
-// --------------------------------------------------
 /**
  * Saves a quiz question or response to localStorage under "quizResponses".
  * If a record with the same ID already exists, it merges the new data into it.
- * This helps to keep each quiz question as a single record.
+ * 
  * @param {Object} quizData - The quiz data object.
  */
 const saveQuizData = quizData => {

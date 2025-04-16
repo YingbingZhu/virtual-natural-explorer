@@ -214,20 +214,23 @@ class Entity {
    */
   preyLogic() {
     let nearestGrass = null;
-    let minDist = Infinity;
-  
-    // Find nearest grass within range
+    let minDistGrass = Infinity;
+
+    // Use the search range for detecting grass.
+    const searchRange = this.sim.settings.sheepSearchRange;
+
+    // Find nearest grass within the search range.
     this.sim.entities.forEach(e => {
       if (e.type === 'plant' && e.health > 0) {
         const d = Math.hypot(this.x - e.x, this.y - e.y);
-        if (d < this.sim.preyPlantRange && d < minDist) {
-          minDist = d;
+        if (d < searchRange && d < minDistGrass) {
+          minDistGrass = d;
           nearestGrass = e;
         }
       }
     });
 
-    // Look for the nearest predator 
+    // Find nearest predator.
     let nearestPredator = null;
     let predatorDist = Infinity;
     this.sim.entities.forEach(e => {
@@ -240,64 +243,66 @@ class Entity {
       }
     });
 
-    // If a predator is too close, run away from it.
+    // If a predator is detected within fear range, flee.
     const fearRange = this.sim.settings.sheepFearRange || 100;
     if (nearestPredator && predatorDist < fearRange) {
       const dx = this.x - nearestPredator.x;
       const dy = this.y - nearestPredator.y;
       const dist = Math.hypot(dx, dy) || 1;
-      // Optionally, sheep can run faster than their normal speed when fleeing.
       const fleeSpeedMultiplier = 1.2;
       this.x += (dx / dist) * this.speed * fleeSpeedMultiplier;
       this.y += (dy / dist) * this.speed * fleeSpeedMultiplier;
-    } else if (nearestGrass) {
-      // Move toward the grass if no predator is too close
+    }
+    // Otherwise, if grass is found, move toward it.
+    else if (nearestGrass) {
       const dx = nearestGrass.x - this.x;
       const dy = nearestGrass.y - this.y;
       const dist = Math.hypot(dx, dy) || 1;
       this.x += (dx / dist) * this.speed;
       this.y += (dy / dist) * this.speed;
-    } else {
-      // Wander if no grass found and no predator nearby
+    }
+    // If neither is found, wander randomly.
+    else {
       this.x += (Math.random() - 0.5) * this.speed;
       this.y += (Math.random() - 0.5) * this.speed;
     }
-  
-    // Eat grass if close enough
-    if (nearestGrass && minDist < this.sim.settings.sheepEatRange) {
-      const grazeAmount = this.sim.settings.sheepGrazeAmount; 
-      const energyGain = this.sim.settings.sheepGainFromFood; 
-    
+
+    // If close enough to the grass to eat it.
+    if (nearestGrass && minDistGrass < this.sim.settings.sheepEatRange) {
+      const grazeAmount = this.sim.settings.sheepGrazeAmount;
+      const energyGain = this.sim.settings.sheepGainFromFood;
       nearestGrass.health = Math.max(0, nearestGrass.health - grazeAmount);
       this.energy = Math.min(this.sim.settings.animalInitialEnergy, this.energy + energyGain);
-    
       if (nearestGrass.health === 0) {
         this.sim.updateInfo("Sheep ate a grass patch!");
       }
     }
-  
+
+    // Deduct energy for moving.
     this.energy -= 0.5;
-  
-    // Reproduce if enough energy
+
+    // Reproduce if energy is sufficient.
     if (this.energy > this.sim.settings.sheepReproduceThreshold &&
-      Math.random() < this.sim.settings.sheepReproduceProb) {
+        Math.random() < this.sim.settings.sheepReproduceProb) {
       this.sim.entities.push(new Entity(this.x + 10, this.y + 10, 'prey', this.emoji, this.sim));
       this.energy /= 2;
       this.sim.updateInfo("A sheep was born!");
     }
   }
-  
+
   /**
    * Handles predator logics
    */
   predatorLogic() {
-    // Find closest prey
     let target = null;
     let minDist = Infinity;
+    const searchRange = this.sim.settings.wolfSearchRange; 
+
+    // Find the closest prey within the search range
     this.sim.entities.forEach(e => {
       if (e.type === 'prey') {
         const d = Math.hypot(this.x - e.x, this.y - e.y);
-        if (d < minDist) {
+        if (d < searchRange && d < minDist) {
           minDist = d;
           target = e;
         }
@@ -305,31 +310,38 @@ class Entity {
     });
 
     if (target) {
+      // Calculate vector towards the target prey
       const dx = target.x - this.x;
       const dy = target.y - this.y;
       const dist = Math.hypot(dx, dy) || 1;
+      // Move the predator towards the prey
       this.x += (dx / dist) * this.speed;
       this.y += (dy / dist) * this.speed;
       
+      // If the prey is close enough, attack it
       if (minDist < this.sim.settings.wolfAttackRange) {
-        // eat the target
+        // Remove the target from the simulation
         this.sim.entities = this.sim.entities.filter(e => e !== target);
-        this.energy += this.sim.settings.wolfGainFromFood;
+        this.energy = Math.min(this.sim.settings.animalInitialEnergy, this.energy + this.sim.settings.wolfGainFromFood);
         this.sim.updateInfo("A wolf ate a sheep!");
       }
     } else {
-      // Wander if no prey found
+      // If no prey is found within the search range, wander randomly.
       this.x += (Math.random() - 0.5) * this.speed;
       this.y += (Math.random() - 0.5) * this.speed;
     }
     
+    // Deduct energy for movement
     this.energy -= 0.5;
+    
+    // Reproduce if enough energy and probability check passes.
     if (this.energy > this.sim.settings.wolfReproduceThreshold && Math.random() < this.sim.settings.wolfReproduceProb) {
       this.sim.entities.push(new Entity(this.x + 10, this.y + 10, 'predator', this.emoji, this.sim));
       this.energy /= 2;
       this.sim.updateInfo("A wolf was born!");
     }
   }
+
 
   /**
    * Entity move
@@ -420,21 +432,23 @@ class Simulation {
     this.settings = {
       animalInitialEnergy: 50,
       // sheep related 
-      sheepEatRange: 15,
+      sheepSearchRange: 150, 
+      sheepEatRange: 30,
       sheepGrazeAmount: 5,
       sheepGainFromFood: 20,
-      sheepReproduceProb: 0.05,
+      sheepReproduceProb: 0.03,
       sheepReproduceThreshold: 30,
-      sheepBaseSpeed: 1.5,
+      sheepBaseSpeed: 2,
       sheepSpeedVariance: 0.5,
-      sheepFearRange: 10,
+      sheepFearRange: 50,
       // wolf
       wolfGainFromFood: 20,
-      wolfReproduceProb: 0.05,
+      wolfReproduceProb: 0.03,
       wolfReproduceThreshold: 40,
       wolfSpeedVariance: 0.5,
+      wolfSearchRange: 300,
       wolfAttackRange: 30,
-      wolfBaseSpeed: 1.8,
+      wolfBaseSpeed: 3,
       // grass
       grassRegrowTime: 30,
       plantInitialHealth: 50,
@@ -1009,7 +1023,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.updateActivityDescription = function () {
     const descriptions = {
       pollution: "💨 <strong>Pollution Zone:</strong> This area is overwhelmed by smog and toxic emissions. Both Animal friends and plants are affected, expecially animals.",
-      deforestation: "🪓 <strong>Deforestation Zone:</strong> In this zone, excessive tree cutting diminish plant regrowth. It will also affect our herbivores friends",
+      deforestation: "🪓 <strong>Deforestation Zone:</strong> In this zone, excessive tree cutting diminish plant regrowth. It will reduces food for our herbivores friends",
       conservation: "🌱 <strong>Conservation Zone:</strong> This is a protected area where recovery efforts help animals regain energy and plants slowly restore their health. "
     };
     const select = document.getElementById("activityType");

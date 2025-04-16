@@ -85,7 +85,7 @@ const toggleMarkers = () => {
 };
 map.on('zoomend', toggleMarkers);
 
-/* ==================  Chat and Quiz ========================
+/* ==================  Chat and Quiz ======================== */
 
 // Global chat history object per animal.
 let chatHistory = {};
@@ -96,6 +96,7 @@ let lastMessageWasQuiz = false;
  * Opens the chat popup for a specific animal.
  * @param {string} animalName - The name of the animal to chat with.
  */
+
 const openChatPopup = animalName => {
   lastMessageWasQuiz = false;
   const chatPopup = document.getElementById('chat-popup');

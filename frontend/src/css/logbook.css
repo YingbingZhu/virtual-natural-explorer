@@ -1,8 +1,8 @@
 /* ========================== */
-/* ENCYCLOPEDIA PAGE STYLES   */
+/* LOGBOOK STYLES             */
 /* ========================== */
 
-/* Animal Card Styling (Flexbox for side-by-side layout) */
+/* Animal Card Styling */
 .animal-card {
     background: white;
     padding: 15px;
@@ -46,15 +46,15 @@
     border-radius: 6px;
     overflow: hidden;
     margin: 4px 0;
-  }
+}
   
-  .progress-fill {
+.progress-fill {
     height: 100%;
-    background-color: #4caf50; /* green for familiarity */
+    background-color: #4caf50; 
     width: 0;
     transition: width 0.4s ease-in-out;
-  }
-  
-  .affection-bar .progress-fill {
-    background-color: #f06292; /* pink for affection */
-  }
+}
+
+.affection-bar .progress-fill {
+    background-color: #f06292; 
+}

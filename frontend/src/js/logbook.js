@@ -68,14 +68,13 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
     
-        // 🎯 Always get the container
         const progressContainer = animalCard.querySelector(`#${safeId}`);
         if (!progressContainer) {
             console.warn(`Missing progress container for ${animal.name}`);
             return;
         }
     
-        // ✅ Insert quiz progress if available
+        // Insert quiz progress if available
         const quizStats = JSON.parse(localStorage.getItem("quizResponses")) || [];
         const animalStats = quizStats.filter(q => q.animal === animal.name);
         if (animalStats.length > 0) {
@@ -92,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         }
     
-        // ✅ Always show affection
+        // Always show affection
         const affection = getAffectionLevel(animal.name);
         const affectionLabel =
             affection >= 80 ? '💖 Trusted Friend' :
@@ -111,12 +110,11 @@ document.addEventListener("DOMContentLoaded", () => {
         animalList.appendChild(animalCard);
     }
     
-    
-
     /**
-     * Converts coordinates into a human-friendly description
-     * @param {Array} coordinates - [longitude, latitude]
-     * @returns {string} - Formatted location
+     * Converts coordinates into continent
+     * 
+     * @param {Array} coordinates  [longitude, latitude]
+     * @returns {string}  Formatted location
      */
     function getRegionDescription(coordinates) {
         const [longitude, latitude] = coordinates;
