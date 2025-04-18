@@ -17,13 +17,13 @@ npm --version
 Install dependencies:
 
 ```bash
-cd virtual-animal-tour
+cd virtual-natural-explorer
 npm install
 ```
 
 ## Environment Setup
 
-Store your OpenAI API key in the backend .env file: `virtual-animal-tour/backend/.env`
+Store your OpenAI API key in the backend .env file: `virtual-natural-explorer/backend/.env`
 
 Example:
 ```
@@ -33,12 +33,13 @@ By adding this, the backend can access AI functionality.
 ---
 
 ## How to Start the Project
-From the project root directory `virtual-animal-tour/`
+From the project root directory `virtual-natural-explorer/`
 Type this command in terminal
 ```
 npm start
 ```
 This command will lauch both frontend and backend.
+Now the web should be running on http://localhost:3400/
 
 ---
 
