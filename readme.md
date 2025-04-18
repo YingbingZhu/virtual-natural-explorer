@@ -3,6 +3,23 @@
 An interactive web-based platform for exploring wildlife and ecosystems around the world. 
 Features include a world map with AI-powered wildlife chatbot, quizzes, and interactive ecosystem simulation.
 
+## Prerequisites
+- **Node.js** v14 or higher  
+- **npm** (comes bundled with Node.js)  
+
+Verify your setup:
+
+```bash
+node --version   
+npm --version
+```
+
+Install dependencies:
+
+```bash
+cd virtual-animal-tour
+npm install
+```
 
 ## Environment Setup
 

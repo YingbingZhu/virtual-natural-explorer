@@ -78,16 +78,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const quizStats = JSON.parse(localStorage.getItem("quizResponses")) || [];
         const animalStats = quizStats.filter(q => q.animal === animal.name);
         if (animalStats.length > 0) {
+            const total = animalStats.length;
             const correct = animalStats.filter(q => q.result === "Correct").length;
-            const percent = Math.round((correct / animalStats.length) * 100);
-            const badge = percent >= 80 ? '🏆' : percent >= 50 ? '📘' : '🌱';
-    
+            const familiarityScore = Math.min(total, 100); 
+            const badge = familiarityScore >= 80 ? '🏆' : familiarityScore >= 50 ? '📘' : '🌱';
+
             progressContainer.innerHTML += `
                 <p><strong>🧠 Familiarity with ${animal.name}</strong></p>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${percent}%;" aria-valuenow="${percent}"></div>
+                    <div class="progress-fill" style="width: ${familiarityScore}%;" aria-valuenow="${familiarityScore}"></div>
                 </div>
-                <p><small>${correct} correct / ${animalStats.length} total — ${badge} <em>${getBadgeLabel(badge)}</em></small></p>
+                <p><small>${correct}% — ${badge} <em>${getBadgeLabel(badge)}</em></small></p>
             `;
         }
     

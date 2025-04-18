@@ -4,7 +4,7 @@
   "description": "An interactive web-based platform for exploring wildlife and ecosystems around the world.  Features include a world map with AI-powered wildlife chatbot, quizzes, and interactive ecosystem simulation.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "npm install --prefix backend && npm install --prefix frontend",
     "start": "concurrently \"npm run start --prefix backend\" \"npm run start --prefix frontend\""
   },
   "keywords": [],
